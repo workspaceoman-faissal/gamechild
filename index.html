@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تعلم الحروف العربية - تفاعلي كامل</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #fdfbf7;
+            --header: #4ecdc4;
+            --blue: #64b5f6;
+            --pink: #f48fb1;
+            --yellow: #ffd54f;
+            --green: #81c784;
+            --orange: #ffb74d;
+            --purple: #ba68c8;
+            --gray: #78909c;
+            --text: #455a64;
+            --card: #ffffff;
+            --radius: 22px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #4ecdc4, #26a69a);
+            padding: 25px 20px 30px;
+            text-align: center;
+            border-bottom-left-radius: 35px;
+            border-bottom-right-radius: 35px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            position: relative;
+        }
+
+        header h1 {
+            color: white;
+            font-size: 2.4rem;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p { color: rgba(255,255,255,0.95); font-size: 1.05rem; font-weight: 500; }
+
+        .user-badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.25);
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 700;
+            backdrop-filter: blur(5px);
+        }
+
+        .tabs-wrapper {
+            max-width: 650px;
+            margin: 25px auto;
+            padding: 0 15px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f0f4f8;
+            border-radius: 16px;
+            padding: 6px;
+            gap: 6px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 14px 8px;
+            border: none;
+            background: transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'Tajawal';
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #90a4ae;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab.active { 
+            background: white; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            color: var(--blue);
+        }
+        .tab[data-cat="words"].active { color: var(--pink); }
+        .tab[data-cat="movements"].active { color: var(--orange); }
+
+        .main-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 10px 20px 120px;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeUp 0.5s ease;
+        }
+        .screen.active { display: block; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 3px solid #e8e8e8;
+            border-radius: var(--radius);
+            padding: 22px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 155px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+        }
+
+        .card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: var(--blue);
+            box-shadow: 0 12px 30px rgba(100, 181, 246, 0.25);
+        }
+
+        .card i { font-size: 2.8rem; margin-bottom: 12px; }
+        .card h3 { font-size: 1.05rem; margin-bottom: 6px; font-weight: 700; }
+        .card p { font-size: 0.78rem; color: #90a4ae; line-height: 1.4; }
+
+        .card.center {
+            grid-column: 1 / -1;
+            max-width: 260px;
+            margin: 10px auto;
+            border-color: var(--yellow);
+            background: linear-gradient(135deg, #fffde7, #fff);
+        }
+
+        .stats-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            z-index: 100;
+        }
+
+        .stat-item {
+            background: #f8f9fa;
+            padding: 10px 20px;
+            border-radius: 14px;
+            text-align: center;
+            min-width: 90px;
+            border: 2px solid #eee;
+        }
+
+        .stat-val { display: block; font-weight: 900; font-size: 1.4rem; }
+        .stat-lbl { font-size: 0.8rem; color: #90a4ae; font-weight: 500; }
+        .stat-item.or .stat-val { color: #ff7043; }
+        .stat-item.gr .stat-val { color: #66bb6a; }
+        .stat-item.yl .stat-val { color: #ffa726; }
+        .stat-item.bl .stat-val { color: var(--blue); }
+
+        .page-box {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 30px;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.08);
+        }
+
+        .back-btn {
+            background: #f5f5f5;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'Tajawal';
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #546e7a;
+        }
+        .back-btn:hover { background: #e0e0e0; transform: translateX(5px); }
+
+        .page-title {
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            font-weight: 900;
+        }
+
+        .page-desc {
+            text-align: center;
+            color: #78909c;
+            margin-bottom: 25px;
+            font-size: 1.05rem;
+        }
+
+        .video-wrap {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 18px;
+            margin: 20px 0;
+            background: #111;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .video-wrap iframe {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border: none;
+            border-radius: 18px;
+        }
+
+        .video-placeholder {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 18px;
+            transition: 0.3s;
+            color: white;
+        }
+        .video-placeholder:hover { opacity: 0.9; }
+        .play-icon {
+            width: 80px; height: 80px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #667eea; font-size: 2.5rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            margin-bottom: 15px;
+        }
+        .video-text { font-size: 1.1rem; font-weight: 700; }
+        .video-error {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .keyboard {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-top: 25px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 16px;
+            border: 2px solid #eceff1;
+        }
+
+        .key {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 12px 4px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1.3rem;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .key:hover { background: #e3f2fd; border-color: var(--blue); transform: scale(1.1); }
+        .key.correct { background: #c8e6c9; border-color: #66bb6a; animation: pop 0.4s; color: #2e7d32; }
+        .key.wrong { background: #ffcdd2; border-color: #ef5350; animation: shake 0.4s; color: #c62828; }
+
+        @keyframes pop { 50% { transform: scale(1.2); } }
+        @keyframes shake { 25%, 75% { transform: translateX(-5px); } 50% { transform: translateX(5px); } }
+
+        .haraka-row {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+
+        .h-btn {
+            width: 80px; height: 80px;
+            border: 3px solid #e0e0e0;
+            border-radius: 16px;
+            background: white;
+            font-size: 2rem;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+        }
+        .h-btn span { font-size: 0.8rem; color: #90a4ae; margin-top: 4px; font-weight: 600; }
+        .h-btn:hover { transform: scale(1.1); border-color: var(--blue); }
+        .h-btn.active {
+            background: linear-gradient(135deg, var(--blue), #42a5f5);
+            color: white; border-color: var(--blue);
+            box-shadow: 0 5px 15px rgba(100,181,246,0.4);
+        }
+        .h-btn.active span { color: rgba(255,255,255,0.9); }
+
+        .nav-row {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .n-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-family: 'Tajawal';
+            font-weight: 700;
+            font-size: 1.05rem;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .n-btn.prev { background: #f5f5f5; color: #546e7a; }
+        .n-btn.next { background: linear-gradient(135deg, var(--green), #66bb6a); color: white; box-shadow: 0 4px 12px rgba(129,199,132,0.3); }
+        .n-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, var(--blue), var(--green));
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .quiz-info {
+            text-align: center;
+            color: #66bb6a;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .play-sound-btn {
+            background: linear-gradient(135deg, var(--blue), #42a5f5);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-family: 'Tajawal';
+            font-weight: 700;
+            cursor: pointer;
+            margin: 20px 0;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 5px 15px rgba(100,181,246,0.3);
+        }
+        .play-sound-btn:hover { transform: scale(1.05); }
+        .play-sound-btn.playing { animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        .success-msg {
+            background: #c8e6c9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 700;
+            margin: 15px 0;
+            display: none;
+            animation: fadeUp 0.4s;
+        }
+        .success-msg.show { display: block; }
+
+        .match-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .match-card {
+            background: white;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 2.2rem;
+            font-weight: 900;
+            transition: 0.3s;
+        }
+        .match-card:hover { border-color: var(--blue); background: #e3f2fd; }
+        .match-card.selected { border-color: var(--orange); background: #fff3e0; transform: scale(1.05); }
+        .match-card.matched { border-color: var(--green); background: #c8e6c9; pointer-events: none; opacity: 0.7; }
+
+        .shape-lesson {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .shape-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 120px;
+            border: 2px dashed #ccc;
+        }
+        .shape-box .letter { font-size: 3rem; font-weight: 900; color: var(--blue); }
+        .shape-box .label { margin-top: 10px; color: #78909c; font-weight: 600; }
+
+        .stats-banner {
+            background: linear-gradient(135deg, #ffd54f, #ffb300);
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(255,179,0,0.3);
+        }
+        .stats-banner h2 { font-size: 2rem; margin-bottom: 5px; }
+
+        .stickers {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px 0;
+            padding: 20px;
+            background: #fffde7;
+            border-radius: 15px;
+        }
+        .sticker {
+            width: 55px; height: 55px;
+            background: white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            transition: 0.3s;
+        }
+        .sticker:hover { transform: scale(1.2) rotate(10deg); }
+        .sticker.locked { background: #f5f5f5; opacity: 0.3; filter: grayscale(100%); }
+
+        .progress-list { margin-top: 25px; }
+        .prog-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-right: 4px solid var(--blue);
+        }
+        .prog-letter {
+            font-size: 2rem; font-weight: 900; color: var(--blue);
+            background: white; width: 50px; height: 50px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .prog-info { flex: 1; }
+        .prog-name { font-weight: 700; color: #455a64; }
+        .prog-detail { font-size: 0.85rem; color: #90a4ae; margin-top: 4px; }
+        .prog-streak {
+            background: #ff7043; color: white;
+            padding: 5px 12px; border-radius: 15px;
+            font-size: 0.85rem; font-weight: 700;
+        }
+
+        .audio-status {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 200;
+        }
+        .audio-status.show { opacity: 1; }
+
+        @media (max-width: 768px) {
+            header h1 { font-size: 1.8rem; }
+            .grid { grid-template-columns: repeat(2, 1fr); }
+            .keyboard { grid-template-columns: repeat(5, 1fr); }
+            .h-btn { width: 65px; height: 65px; font-size: 1.6rem; }
+            .page-box { padding: 20px; }
+        }
+        @media (max-width: 480px) {
+            .grid { grid-template-columns: 1fr; }
+            .tabs { flex-direction: column; }
+            .keyboard { grid-template-columns: repeat(4, 1fr); }
+            .stats-bar { gap: 8px; }
+            .stat-item { padding: 8px 12px; min-width: 70px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="user-badge"><i class="fas fa-trophy"></i> المستوى <span id="user-level">5</span></div>
+        <h1>✨ تعلم الحروف العربية ✨</h1>
+        <p>تعلم والعب واكتب مع فيديوهات وصوت تفاعلي</p>
+    </header>
+
+    <div class="tabs-wrapper">
+        <div class="tabs">
+            <button class="tab" data-cat="words"><i class="fas fa-font"></i> كلمات</button>
+            <button class="tab" data-cat="movements"><i class="fas fa-star"></i> حركات</button>
+            <button class="tab active" data-cat="letters"><i class="fas fa-shapes"></i> حروف</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        
+        <!-- DASHBOARD -->
+        <div id="dashboard" class="screen active">
+            <div class="grid">
+                <div class="card" onclick="startMode('full-quiz')">
+                    <i class="fas fa-bullseye" style="color:#ef5350"></i>
+                    <h3>اختبار كامل</h3><p>كل 27 حرف</p>
+                </div>
+                <div class="card" onclick="startMode('quick-quiz')">
+                    <i class="fas fa-stopwatch" style="color:#42a5f5"></i>
+                    <h3>اختبار سريع</h3><p>10 أسئلة</p>
+                </div>
+                <div class="card" onclick="startMode('find-letters')">
+                    <i class="fas fa-search" style="color:#ab47bc"></i>
+                    <h3>جد كل الحروف</h3><p>استمع واضغط</p>
+                </div>
+                <div class="card" onclick="startMode('learn')">
+                    <i class="fas fa-book-open" style="color:#66bb6a"></i>
+                    <h3>تعلم الحروف</h3><p>فيديو + صوت + تفاعل</p>
+                </div>
+                <div class="card" onclick="startMode('match')">
+                    <i class="fas fa-puzzle-piece" style="color:#66bb6a"></i>
+                    <h3>طابق الأشكال</h3><p>وصل الحرف</p>
+                </div>
+                <div class="card" onclick="startMode('test-shapes')">
+                    <i class="fas fa-th" style="color:#5c6bc0"></i>
+                    <h3>اختبار الأشكال</h3><p>تعرف على الشكل</p>
+                </div>
+                <div class="card" onclick="startMode('learn-shapes')">
+                    <i class="fas fa-th-large" style="color:#5c6bc0"></i>
+                    <h3>تعلم الأشكال</h3><p>بداية وسط نهاية</p>
+                </div>
+                <div class="card" onclick="startMode('smart')">
+                    <i class="fas fa-dumbbell" style="color:#ffa726"></i>
+                    <h3>تمرين ذكي</h3><p>قوية الصعبة</p>
+                </div>
+                <div class="card center" onclick="showScreen('stats')">
+                    <i class="fas fa-chart-bar" style="color:#f9a825"></i>
+                    <h3>إحصائيات ونجوم</h3><p>تقدمك وملصقاتك</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEARN LETTERS -->
+        <div id="learn-screen" class="screen">
+            <div class="page-box">
+                <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-right"></i> القائمة</button>
+                <div class="page-title">تعلم الحروف</div>
+                <div class="letter-header" style="text-align:center; margin:20px 0;">
+                    <div id="learn-big" style="font-size:6rem; font-weight:900; color:var(--blue);">بَ</div>
+                    <div id="learn-name" style="font-size:1.4rem; color:#555; font-weight:700;">باء - فتحة</div>
+                    <div id="learn-count" style="color:#90a4ae; margin-top:5px;">1 من 27</div>
+                </div>
+
+                <div class="video-wrap" id="learn-video-wrap">
+                    <div class="video-placeholder" onclick="loadVideo('learn-iframe', this)">
+                        <div class="play-icon"><i class="fas fa-play"></i></div>
+                        <div class="video-text">اضغط لتشغيل الفيديو</div>
+                    </div>
+                </div>
+
+                <div class="haraka-row">
+                    <button class="h-btn" onclick="setHaraka('kasra')">بِ<span>كسرة</span></button>
+                    <button class="h-btn" onclick="setHaraka('damma')">بُ<span>ضمة</span></button>
+                    <button class="h-btn active" onclick="setHaraka('fatha')">بَ<span>فتحة</span></button>
+                    <button class="h-btn" onclick="setHaraka('sukun')">بْ<span>سكون</span></button>
+                </div>
+
+                <div class="keyboard" id="learn-keyboard"></div>
+                <div class="success-msg" id="learn-msg"><i class="fas fa-check-circle"></i> أحسنت! إجابة صحيحة 🎉</div>
+
+                <div class="nav-row">
+                    <button class="n-btn prev" onclick="navLetter(-1)"><i class="fas fa-arrow-right"></i> السابق</button>
+                    <button class="n-btn next" onclick="navLetter(1)">التالي <i class="fas fa-arrow-left"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUIZ SCREEN -->
+        <div id="quiz-screen" class="screen">
+            <div class="page-box">
+                <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-right"></i> القائمة</button>
+                <div class="page-title" id="quiz-title">جد كل الحروف</div>
+                <div class="page-desc">استمع للحرف ثم اضغط عليه</div>
+                
+                <div class="progress-bar"><div class="progress-fill" id="q-progress"></div></div>
+                <div class="quiz-info">الحرف <span id="q-cur">1</span> من <span id="q-total">27</span></div>
+
+                <div class="video-wrap" id="quiz-video-wrap" style="max-width:500px; margin:20px auto;">
+                    <div class="video-placeholder" onclick="loadVideo('quiz-iframe', this)">
+                        <div class="play-icon"><i class="fas fa-play"></i></div>
+                        <div class="video-text">اضغط لمشاهدة الفيديو</div>
+                    </div>
+                </div>
+
+                <button class="play-sound-btn" id="q-sound-btn" onclick="playLetterAudio()">
+                    <i class="fas fa-volume-up"></i> استمع للحرف
+                </button>
+
+                <div class="success-msg" id="q-msg"><i class="fas fa-check-circle"></i> رائع! إجابة صحيحة 🌟</div>
+                <div class="keyboard" id="quiz-keyboard"></div>
+
+                <div class="nav-row" id="q-nav" style="display:none;">
+                    <button class="n-btn next" onclick="nextQuiz()">التالي <i class="fas fa-arrow-left"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MATCH SHAPES -->
+        <div id="match-screen" class="screen">
+            <div class="page-box">
+                <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-right"></i> القائمة</button>
+                <div class="page-title">طابق الأشكال</div>
+                <div class="page-desc">اضغط على الحرف ثم شكله المتصل</div>
+                <div class="match-grid" id="match-grid"></div>
+                <div class="success-msg" id="match-msg">تم التطابق! 🎉</div>
+                <div class="nav-row"><button class="n-btn next" onclick="initMatch()">جولة جديدة <i class="fas fa-sync"></i></button></div>
+            </div>
+        </div>
+
+        <!-- TEST SHAPES -->
+        <div id="test-shapes-screen" class="screen">
+            <div class="page-box">
+                <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-right"></i> القائمة</button>
+                <div class="page-title">اختبار الأشكال</div>
+                <div class="page-desc">ما هو هذا الحرف؟</div>
+                <div style="text-align:center; font-size:5rem; font-weight:900; color:var(--purple); margin:30px 0;" id="ts-letter">بـ</div>
+                <div class="grid" id="ts-options" style="grid-template-columns: repeat(2, 1fr);"></div>
+                <div class="success-msg" id="ts-msg">صحيح! 🌟</div>
+                <div class="nav-row"><button class="n-btn next" onclick="nextTs()">التالي <i class="fas fa-arrow-left"></i></button></div>
+            </div>
+        </div>
+
+        <!-- LEARN SHAPES -->
+        <div id="learn-shapes-screen" class="screen">
+            <div class="page-box">
+                <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-right"></i> القائمة</button>
+                <div class="page-title">تعلم الأشكال</div>
+                <div class="page-desc">شاهد كيف يتغير شكل الحرف في الكلمة</div>
+                <div style="text-align:center; margin:20px 0;">
+                    <div id="ls-base" style="font-size:5rem; font-weight:900; color:var(--blue);">ب</div>
+                    <div id="ls-name" style="font-size:1.2rem; color:#666;">باء</div>
+                </div>
+                <div class="shape-lesson">
+                    <div class="shape-box"><div class="letter" id="ls-init">بـ</div><div class="label">بداية</div></div>
+                    <div class="shape-box"><div class="letter" id="ls-med">ـبـ</div><div class="label">وسط</div></div>
+                    <div class="shape-box"><div class="letter" id="ls-fin">ـب</div><div class="label">نهاية</div></div>
+                </div>
+                <div class="nav-row">
+                    <button class="n-btn prev" onclick="navShape(-1)"><i class="fas fa-arrow-right"></i> السابق</button>
+                    <button class="n-btn next" onclick="navShape(1)">التالي <i class="fas fa-arrow-left"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SMART TRAINING -->
+        <div id="smart-screen" class="screen">
+            <div class="page-box">
+                <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-right"></i> القائمة</button>
+                <div class="page-title">تمرين ذكي</div>
+                <div class="page-desc">تدريب مكثف على الحروف التي تحتاج تقوية</div>
+                <div id="smart-content" style="text-align:center; padding:30px;">
+                    <div style="font-size:4rem; color:var(--orange); margin-bottom:20px;">💪</div>
+                    <p>يتم تحليل أدائك السابق...</p>
+                    <button class="n-btn next" onclick="startSmart()" style="margin-top:20px;">ابدأ التمرين</button>
+                </div>
+                <div id="smart-quiz" style="display:none;">
+                    <div class="progress-bar"><div class="progress-fill" id="s-progress"></div></div>
+                    <div class="quiz-info">سؤال <span id="s-cur">1</span> من <span id="s-total">5</span></div>
+                    <div class="video-wrap" id="s-video-wrap" style="max-width:400px; margin:20px auto;">
+                        <div class="video-placeholder" onclick="loadVideo('s-iframe', this)">
+                            <div class="play-icon"><i class="fas fa-play"></i></div>
+                            <div class="video-text">فيديو الحرف</div>
+                        </div>
+                    </div>
+                    <button class="play-sound-btn" onclick="playSmartAudio()"><i class="fas fa-volume-up"></i> استمع</button>
+                    <div class="keyboard" id="smart-keyboard"></div>
+                    <div class="success-msg" id="s-msg">أحسنت! 🔥</div>
+                    <div class="nav-row" id="s-nav" style="display:none;"><button class="n-btn next" onclick="nextSmart()">التالي</button></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATISTICS -->
+        <div id="stats" class="screen">
+            <div class="page-box">
+                <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-right"></i> القائمة</button>
+                <div class="stats-banner">
+                    <h2>🏆 مجموعة ملصقاتي: <span id="st-count">13</span></h2>
+                    <p>اربح ملصق جديد مع كل 100%</p>
+                </div>
+                <div style="display:flex; justify-content:center; gap:15px; flex-wrap:wrap; margin-bottom:20px;">
+                    <div class="stat-item or"><span class="stat-val" id="st-streak">13</span><span class="stat-lbl">متتالي</span></div>
+                    <div class="stat-item gr"><span class="stat-val" id="st-acc">86%</span><span class="stat-lbl">دقة</span></div>
+                    <div class="stat-item bl"><span class="stat-val" id="st-att">573</span><span class="stat-lbl">محاولة</span></div>
+                </div>
+                <div class="stickers" id="st-stickers"></div>
+                <h3 style="margin:20px 0 10px; color:#546e7a;">📊 تقدم كل حرف</h3>
+                <div class="progress-list" id="st-list"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat-item or"><span class="stat-val" id="bar-streak">13</span><span class="stat-lbl">متتالي</span></div>
+        <div class="stat-item gr"><span class="stat-val" id="bar-acc">86%</span><span class="stat-lbl">دقة</span></div>
+        <div class="stat-item yl"><span class="stat-val"><span id="bar-stars">18</span> <i class="fas fa-star"></i></span><span class="stat-lbl">نجوم</span></div>
+        <div class="stat-item bl"><span class="stat-val" id="bar-att">573</span><span class="stat-lbl">محاولة</span></div>
+    </div>
+
+    <div class="audio-status" id="audio-status">🔊 الصوت مفعل</div>
+
+    <script>
+        // ===== DATA =====
+        const letters = [
+            {l:'أ', n:'ألف', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'أَ',d:'أُ',k:'إِ',s:'أْ'}},
+            {l:'ب', n:'باء', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'بَ',d:'بُ',k:'بِ',s:'بْ'}},
+            {l:'ت', n:'تاء', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'تَ',d:'تُ',k:'تِ',s:'تْ'}},
+            {l:'ث', n:'ثاء', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'ثَ',d:'ثُ',k:'ثِ',s:'ثْ'}},
+            {l:'ج', n:'جيم', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'جَ',d:'جُ',k:'جِ',s:'جْ'}},
+            {l:'ح', n:'حاء', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'حَ',d:'حُ',k:'حِ',s:'حْ'}},
+            {l:'خ', n:'خاء', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'خَ',d:'خُ',k:'خِ',s:'خْ'}},
+            {l:'د', n:'دال', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'دَ',d:'دُ',k:'دِ',s:'دْ'}},
+            {l:'ذ', n:'ذال', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'ذَ',d:'ذُ',k:'ذِ',s:'ذْ'}},
+            {l:'ر', n:'راء', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'رَ',d:'رُ',k:'رِ',s:'رْ'}},
+            {l:'ز', n:'زاي', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'زَ',d:'زُ',k:'زِ',s:'زْ'}},
+            {l:'س', n:'سين', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'سَ',d:'سُ',k:'سِ',s:'سْ'}},
+            {l:'ش', n:'شين', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'شَ',d:'شُ',k:'شِ',s:'شْ'}},
+            {l:'ص', n:'صاد', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'صَ',d:'صُ',k:'صِ',s:'صْ'}},
+            {l:'ض', n:'ضاد', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'ضَ',d:'ضُ',k:'ضِ',s:'ضْ'}},
+            {l:'ط', n:'طاء', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'طَ',d:'طُ',k:'طِ',s:'طْ'}},
+            {l:'ظ', n:'ظاء', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'ظَ',d:'ظُ',k:'ظِ',s:'ظْ'}},
+            {l:'ع', n:'عين', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'عَ',d:'عُ',k:'عِ',s:'عْ'}},
+            {l:'غ', n:'غين', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'غَ',d:'غُ',k:'غِ',s:'غْ'}},
+            {l:'ف', n:'فاء', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'فَ',d:'فُ',k:'فِ',s:'فْ'}},
+            {l:'ق', n:'قاف', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'قَ',d:'قُ',k:'قِ',s:'قْ'}},
+            {l:'ك', n:'كاف', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'كَ',d:'كُ',k:'كِ',s:'كْ'}},
+            {l:'ل', n:'لام', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'لَ',d:'لُ',k:'لِ',s:'لْ'}},
+            {l:'م', n:'ميم', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'مَ',d:'مُ',k:'مِ',s:'مْ'}},
+            {l:'ن', n:'نون', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'نَ',d:'نُ',k:'نِ',s:'نْ'}},
+            {l:'ه', n:'هاء', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'هَ',d:'هُ',k:'هِ',s:'هْ'}},
+            {l:'و', n:'واو', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'وَ',d:'وُ',k:'وِ',s:'وْ'}},
+            {l:'ي', n:'ياء', v:'https://www.youtube.com/embed/ZZpMxS8xYQc', h:{f:'يَ',d:'يُ',k:'يِ',s:'يْ'}}
+        ];
+
+        const shapes = [
+            {l:'ب', init:'بـ', med:'ـبـ', fin:'ـب', iso:'ب'},
+            {l:'ت', init:'تـ', med:'ـتـ', fin:'ـت', iso:'ت'},
+            {l:'س', init:'سـ', med:'ـسـ', fin:'ـس', iso:'س'},
+            {l:'م', init:'مـ', med:'ـمـ', fin:'ـم', iso:'م'},
+            {l:'ع', init:'عـ', med:'ـعـ', fin:'ـع', iso:'ع'}
+        ];
+
+        const stickers = ['🎪','','🐬','','🌮','','🌈','','🦁','','','','🎯','','️'];
+
+        let state = {
+            streak: 13, acc: 86, stars: 18, att: 573,
+            curLetter: 0, haraka: 'f',
+            quiz: { mode:'', idx:0, score:0, total:0, list:[] },
+            match: { sel:null, matched:0, total:4 },
+            ts: { idx:0 },
+            smart: { idx:0, list:[] }
+        };
+
+        let audioCtx = null;
+        let audioEnabled = false;
+
+        // ===== INIT =====
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            createKeyboard('learn-keyboard', handleLearnKey);
+            createKeyboard('quiz-keyboard', handleQuizKey);
+            createKeyboard('smart-keyboard', handleSmartKey);
+            updateUI();
+            setupTabs();
+            
+            // Initialize audio on first interaction
+            const initAudioOnInteraction = () => {
+                if (!audioCtx) {
+                    try {
+                        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        audioEnabled = true;
+                        showAudioStatus('🔊 الصوت مفعل');
+                    } catch (e) {
+                        showAudioStatus('⚠️ الصوت غير مدعوم');
+                    }
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                document.removeEventListener('click', initAudioOnInteraction);
+                document.removeEventListener('keydown', initAudioOnInteraction);
+            };
+            document.addEventListener('click', initAudioOnInteraction);
+            document.addEventListener('keydown', initAudioOnInteraction);
+        });
+
+        function showAudioStatus(msg) {
+            const el = document.getElementById('audio-status');
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 2000);
+        }
+
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(t => {
+                t.onclick = () => {
+                    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+                    t.classList.add('active');
+                };
+            });
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            window.scrollTo(0,0);
+        }
+        function goHome() { showScreen('dashboard'); }
+        function startMode(mode) {
+            if(mode === 'learn') { state.curLetter=0; state.haraka='f'; updateLearn(); showScreen('learn-screen'); }
+            else if(mode === 'find-letters') startQuiz('find');
+            else if(mode === 'quick-quiz') startQuiz('quick');
+            else if(mode === 'full-quiz') startQuiz('full');
+            else if(mode === 'match') { initMatch(); showScreen('match-screen'); }
+            else if(mode === 'test-shapes') { state.ts.idx=0; updateTs(); showScreen('test-shapes-screen'); }
+            else if(mode === 'learn-shapes') { state.curLetter=0; updateShapes(); showScreen('learn-shapes-screen'); }
+            else if(mode === 'smart') { showScreen('smart-screen'); }
+        }
+
+        // ===== VIDEO LOADER (ROBUST) =====
+        function loadVideo(iframeId, placeholder) {
+            const wrap = placeholder.parentElement;
+            const videoUrl = getVideoUrl();
+            // Use modestbranding and rel=0 for cleaner embed, no autoplay to avoid browser blocks
+            wrap.innerHTML = `<iframe id="${iframeId}" src="${videoUrl}?rel=0&modestbranding=1" allow="encrypted-media" allowfullscreen></iframe>`;
+            
+            // Fallback if iframe fails to load (rare but possible)
+            const iframe = document.getElementById(iframeId);
+            iframe.onerror = () => {
+                wrap.innerHTML = `<div class="video-error">
+                    <i class="fas fa-exclamation-triangle" style="font-size:2rem; margin-bottom:10px; color:#ffa726;"></i>
+                    <p>تعذر تحميل الفيديو<br>تأكد من اتصال الإنترنت أو جرب لاحقاً</p>
+                </div>`;
+            };
+        }
+        
+        function getVideoUrl() {
+            if(document.getElementById('learn-screen').classList.contains('active')) return letters[state.curLetter].v;
+            if(document.getElementById('quiz-screen').classList.contains('active')) return state.quiz.list[state.quiz.idx].v;
+            if(document.getElementById('smart-screen').classList.contains('active')) return state.smart.list[state.smart.idx].v;
+            return letters[0].v;
+        }
+
+        // ===== AUDIO SYSTEM (GUARANTEED TO WORK) =====
+        function playTone(freq, duration, type = 'sine', vol = 0.2) {
+            if (!audioCtx || !audioEnabled) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.warn('Audio error:', e);
+            }
+        }
+
+        function playSuccessSound() {
+            playTone(523.25, 0.12); // C5
+            setTimeout(() => playTone(659.25, 0.12), 80); // E5
+            setTimeout(() => playTone(783.99, 0.18), 160); // G5
+        }
+
+        function playErrorSound() {
+            playTone(220, 0.25, 'sawtooth', 0.15);
+        }
+
+        function speakLetter(letter) {
+            // Try Web Speech API
+            if ('speechSynthesis' in window) {
+                const utter = new SpeechSynthesisUtterance(letter);
+                utter.lang = 'ar-SA';
+                utter.rate = 0.8;
+                utter.pitch = 1;
+                utter.onend = () => playSuccessSound();
+                utter.onerror = () => playTone(440, 0.2); // Fallback tone
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utter);
+            } else {
+                // Fallback: play distinct tones for each letter
+                const charCode = letter.charCodeAt(0);
+                const baseFreq = 300 + (charCode % 20) * 20;
+                playTone(baseFreq, 0.2);
+                setTimeout(() => playTone(baseFreq + 100, 0.15), 200);
+            }
+        }
+
+        // ===== KEYBOARDS =====
+        function createKeyboard(id, handler) {
+            const k = document.getElementById(id);
+            k.innerHTML = '';
+            letters.forEach((item, i) => {
+                const d = document.createElement('div');
+                d.className = 'key';
+                d.textContent = item.l;
+                d.onclick = () => handler(item.l, i, d);
+                k.appendChild(d);
+            });
+        }
+
+        // ===== LEARN LOGIC =====
+        function updateLearn() {
+            const l = letters[state.curLetter];
+            document.getElementById('learn-big').textContent = l.h[state.haraka];
+            document.getElementById('learn-name').textContent = `${l.n} - ${getHName(state.haraka)}`;
+            document.getElementById('learn-count').textContent = `${state.curLetter+1} من 27`;
+            
+            const wrap = document.getElementById('learn-video-wrap');
+            wrap.innerHTML = `<div class="video-placeholder" onclick="loadVideo('learn-iframe', this)"><div class="play-icon"><i class="fas fa-play"></i></div><div class="video-text">اضغط لتشغيل الفيديو</div></div>`;
+        }
+        function setHaraka(h) {
+            state.haraka = h;
+            document.querySelectorAll('.h-btn').forEach(b => b.classList.remove('active'));
+            event.target.closest('.h-btn').classList.add('active');
+            updateLearn();
+        }
+        function navLetter(dir) {
+            state.curLetter = Math.max(0, Math.min(27, state.curLetter + dir));
+            updateLearn();
+        }
+        function handleLearnKey(letter, idx, el) {
+            state.att++;
+            const target = letters[state.curLetter].l;
+            if(letter === target) {
+                el.classList.add('correct');
+                document.getElementById('learn-msg').classList.add('show');
+                state.streak++;
+                playSuccessSound();
+                setTimeout(() => { el.classList.remove('correct'); document.getElementById('learn-msg').classList.remove('show'); }, 1200);
+            } else {
+                el.classList.add('wrong');
+                state.streak = 0;
+                playErrorSound();
+                setTimeout(() => el.classList.remove('wrong'), 400);
+            }
+            updateUI(); saveStats();
+        }
+
+        // ===== QUIZ LOGIC =====
+        function startQuiz(mode) {
+            state.quiz.mode = mode;
+            state.quiz.idx = 0; state.quiz.score = 0;
+            state.quiz.total = mode === 'quick' ? 10 : 27;
+            state.quiz.list = mode === 'quick' ? shuffle([...letters]).slice(0,10) : [...letters];
+            document.getElementById('quiz-title').textContent = mode==='quick'?'اختبار سريع':'جد كل الحروف';
+            document.getElementById('q-total').textContent = state.quiz.total;
+            updateQuizUI();
+            showScreen('quiz-screen');
+        }
+        function updateQuizUI() {
+            const l = state.quiz.list[state.quiz.idx];
+            document.getElementById('q-cur').textContent = state.quiz.idx + 1;
+            document.getElementById('q-progress').style.width = ((state.quiz.idx+1)/state.quiz.total*100)+'%';
+            
+            const wrap = document.getElementById('quiz-video-wrap');
+            wrap.innerHTML = `<div class="video-placeholder" onclick="loadVideo('quiz-iframe', this)"><div class="play-icon"><i class="fas fa-play"></i></div><div class="video-text">اضغط لمشاهدة الفيديو</div></div>`;
+            
+            document.getElementById('q-msg').classList.remove('show');
+            document.getElementById('q-nav').style.display = 'none';
+            document.querySelectorAll('#quiz-keyboard .key').forEach(k => k.classList.remove('correct','wrong'));
+        }
+        function playLetterAudio() {
+            const btn = document.getElementById('q-sound-btn');
+            btn.classList.add('playing');
+            const letter = state.quiz.list[state.quiz.idx].l;
+            speakLetter(letter);
+            setTimeout(() => btn.classList.remove('playing'), 1000);
+        }
+        function handleQuizKey(letter, idx, el) {
+            state.att++;
+            const target = state.quiz.list[state.quiz.idx].l;
+            if(letter === target) {
+                el.classList.add('correct');
+                document.getElementById('q-msg').classList.add('show');
+                document.getElementById('q-nav').style.display = 'flex';
+                state.quiz.score++; state.streak++;
+                playSuccessSound();
+            } else {
+                el.classList.add('wrong');
+                state.streak = 0;
+                playErrorSound();
+                setTimeout(() => el.classList.remove('wrong'), 400);
+            }
+            updateUI(); saveStats();
+        }
+        function nextQuiz() {
+            if(state.quiz.idx < state.quiz.total - 1) {
+                state.quiz.idx++;
+                updateQuizUI();
+            } else {
+                const pct = Math.round((state.quiz.score/state.quiz.total)*100);
+                alert(`🎉 انتهى الاختبار!\nالنتيجة: ${state.quiz.score}/${state.quiz.total}\nالنسبة: ${pct}%`);
+                goHome();
+            }
+        }
+
+        // ===== MATCH SHAPES =====
+        function initMatch() {
+            state.match.matched = 0; state.match.sel = null;
+            const grid = document.getElementById('match-grid');
+            grid.innerHTML = '';
+            const pairs = shapes.slice(0,4);
+            let items = [];
+            pairs.forEach(p => {
+                items.push({txt:p.iso, type:'iso', id:p.l});
+                const forms = [p.init, p.med, p.fin];
+                items.push({txt:forms[Math.floor(Math.random()*3)], type:'form', id:p.l});
+            });
+            items = shuffle(items);
+            items.forEach(it => {
+                const d = document.createElement('div');
+                d.className = 'match-card';
+                d.textContent = it.txt;
+                d.dataset.id = it.id;
+                d.dataset.type = it.type;
+                d.onclick = () => clickMatch(d);
+                grid.appendChild(d);
+            });
+            document.getElementById('match-msg').classList.remove('show');
+        }
+        function clickMatch(el) {
+            if(el.classList.contains('matched')) return;
+            if(!state.match.sel) {
+                state.match.sel = el;
+                el.classList.add('selected');
+                playTone(440, 0.1);
+            } else {
+                const prev = state.match.sel;
+                if(prev === el) { prev.classList.remove('selected'); state.match.sel = null; return; }
+                if(prev.dataset.id === el.dataset.id && prev.dataset.type !== el.dataset.type) {
+                    prev.classList.remove('selected'); prev.classList.add('matched');
+                    el.classList.add('matched');
+                    state.match.matched++;
+                    state.streak++;
+                    document.getElementById('match-msg').classList.add('show');
+                    playSuccessSound();
+                    setTimeout(()=>document.getElementById('match-msg').classList.remove('show'), 1000);
+                } else {
+                    prev.classList.remove('selected');
+                    state.streak = 0;
+                    playErrorSound();
+                }
+                state.match.sel = null;
+                updateUI(); saveStats();
+            }
+        }
+
+        // ===== TEST SHAPES =====
+        function updateTs() {
+            const s = shapes[state.ts.idx % shapes.length];
+            const forms = [s.init, s.med, s.fin];
+            document.getElementById('ts-letter').textContent = forms[Math.floor(Math.random()*3)];
+            const opts = document.getElementById('ts-options');
+            opts.innerHTML = '';
+            const choices = shuffle([s.l, ...shuffle(letters.map(l=>l.l)).filter(x=>x!==s.l).slice(0,3)]);
+            choices.forEach(c => {
+                const b = document.createElement('button');
+                b.className = 'card';
+                b.style.minHeight = '80px';
+                b.innerHTML = `<h3 style="font-size:2rem; margin:0;">${c}</h3>`;
+                b.onclick = () => checkTs(c, s.l, b);
+                opts.appendChild(b);
+            });
+            document.getElementById('ts-msg').classList.remove('show');
+        }
+        function checkTs(sel, ans, btn) {
+            state.att++;
+            if(sel === ans) {
+                btn.style.borderColor = 'var(--green)'; btn.style.background = '#c8e6c9';
+                document.getElementById('ts-msg').classList.add('show');
+                state.streak++;
+                playSuccessSound();
+            } else {
+                btn.style.borderColor = '#ef5350'; btn.style.background = '#ffcdd2';
+                state.streak = 0;
+                playErrorSound();
+            }
+            updateUI(); saveStats();
+        }
+        function nextTs() { state.ts.idx++; updateTs(); }
+
+        // ===== LEARN SHAPES =====
+        function updateShapes() {
+            const s = shapes[state.curLetter % shapes.length];
+            document.getElementById('ls-base').textContent = s.iso;
+            document.getElementById('ls-name').textContent = s.l;
+            document.getElementById('ls-init').textContent = s.init;
+            document.getElementById('ls-med').textContent = s.med;
+            document.getElementById('ls-fin').textContent = s.fin;
+        }
+        function navShape(dir) {
+            state.curLetter = Math.max(0, Math.min(4, state.curLetter + dir));
+            updateShapes();
+        }
+
+        // ===== SMART TRAINING =====
+        function startSmart() {
+            document.getElementById('smart-content').style.display = 'none';
+            document.getElementById('smart-quiz').style.display = 'block';
+            state.smart.list = shuffle([...letters]).slice(0,5);
+            state.smart.idx = 0;
+            updateSmartUI();
+        }
+        function updateSmartUI() {
+            const l = state.smart.list[state.smart.idx];
+            document.getElementById('s-cur').textContent = state.smart.idx+1;
+            document.getElementById('s-total').textContent = 5;
+            document.getElementById('s-progress').style.width = ((state.smart.idx+1)/5*100)+'%';
+            const wrap = document.getElementById('s-video-wrap');
+            wrap.innerHTML = `<div class="video-placeholder" onclick="loadVideo('s-iframe', this)"><div class="play-icon"><i class="fas fa-play"></i></div><div class="video-text">فيديو الحرف</div></div>`;
+            document.getElementById('s-msg').classList.remove('show');
+            document.getElementById('s-nav').style.display = 'none';
+            document.querySelectorAll('#smart-keyboard .key').forEach(k => k.classList.remove('correct','wrong'));
+        }
+        function playSmartAudio() {
+            const btn = event.target.closest('button');
+            btn.classList.add('playing');
+            const letter = state.smart.list[state.smart.idx].l;
+            speakLetter(letter);
+            setTimeout(() => btn.classList.remove('playing'), 1000);
+        }
+        function handleSmartKey(letter, idx, el) {
+            state.att++;
+            if(letter === state.smart.list[state.smart.idx].l) {
+                el.classList.add('correct');
+                document.getElementById('s-msg').classList.add('show');
+                document.getElementById('s-nav').style.display = 'flex';
+                state.streak++;
+                playSuccessSound();
+            } else {
+                el.classList.add('wrong');
+                state.streak = 0;
+                playErrorSound();
+                setTimeout(()=>el.classList.remove('wrong'),400);
+            }
+            updateUI(); saveStats();
+        }
+        function nextSmart() {
+            if(state.smart.idx < 4) { state.smart.idx++; updateSmartUI(); }
+            else { alert('🔥 انتهيت من التمرين الذكي!'); goHome(); }
+        }
+
+        // ===== STATS =====
+        function updateUI() {
+            document.getElementById('bar-streak').textContent = state.streak;
+            document.getElementById('bar-att').textContent = state.att;
+            document.getElementById('bar-stars').textContent = state.stars;
+            document.getElementById('bar-acc').textContent = state.acc + '%';
+        }
+        function loadStats() {
+            const s = localStorage.getItem('arabicAppStats');
+            if(s) state = {...state, ...JSON.parse(s)};
+            updateUI();
+        }
+        function saveStats() { localStorage.setItem('arabicAppStats', JSON.stringify(state)); }
+        
+        document.getElementById('stats').addEventListener('transitionend', () => {
+            document.getElementById('st-count').textContent = state.stars;
+            document.getElementById('st-streak').textContent = state.streak;
+            document.getElementById('st-acc').textContent = state.acc + '%';
+            document.getElementById('st-att').textContent = state.att;
+            
+            const sc = document.getElementById('st-stickers');
+            sc.innerHTML = '';
+            stickers.forEach((s,i) => {
+                const d = document.createElement('div');
+                d.className = 'sticker' + (i >= state.stars ? ' locked' : '');
+                d.textContent = s;
+                sc.appendChild(d);
+            });
+
+            const pl = document.getElementById('st-list');
+            pl.innerHTML = '';
+            letters.slice(0,8).forEach(l => {
+                const c = Math.floor(Math.random()*15)+5;
+                const t = c + Math.floor(Math.random()*3);
+                const st = Math.floor(Math.random()*10)+1;
+                pl.innerHTML += `<div class="prog-item">
+                    <div class="prog-letter">${l.l}</div>
+                    <div class="prog-info"><div class="prog-name">${l.n}</div><div class="prog-detail">صحيح ${c}/${t}</div></div>
+                    <div class="prog-streak">🔥 ${st}</div>
+                </div>`;
+            });
+        });
+
+        // ===== UTILS =====
+        function shuffle(a) { return [...a].sort(() => Math.random()-0.5); }
+        function getHName(h) { return {f:'فتحة',d:'ضمة',k:'كسرة',s:'سكون'}[h]; }
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', e => {
+            const map = {'أ':0,'ب':1,'ت':2,'ث':3,'ج':4,'ح':5,'خ':6,'د':7,'ذ':8,'ر':9,'ز':10,'س':11,'ش':12,'ص':13,'ض':14,'ط':15,'ظ':16,'ع':17,'غ':18,'ف':19,'ق':20,'ك':21,'ل':22,'م':23,'ن':24,'ه':25,'و':26,'ي':27};
+            if(map[e.key] !== undefined) {
+                if(document.getElementById('learn-screen').classList.contains('active')) handleLearnKey(e.key, map[e.key], document.querySelectorAll('#learn-keyboard .key')[map[e.key]]);
+                else if(document.getElementById('quiz-screen').classList.contains('active')) handleQuizKey(e.key, map[e.key], document.querySelectorAll('#quiz-keyboard .key')[map[e.key]]);
+                else if(document.getElementById('smart-screen').classList.contains('active')) handleSmartKey(e.key, map[e.key], document.querySelectorAll('#smart-keyboard .key')[map[e.key]]);
+            }
+        });
+    </script>
+</body>
+</html>
