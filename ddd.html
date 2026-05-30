@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>نظام حضور ذكي بالتوقيت</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f0;color:#1a1a1a;direction:rtl}
+.app{max-width:900px;margin:0 auto;padding:1rem}
+h1{font-size:19px;font-weight:600;margin-bottom:3px}
+.sub{font-size:12px;color:#666;margin-bottom:1rem}
+.tabs{display:flex;gap:6px;margin-bottom:1rem;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:9px 12px;border:1px solid #ddd;border-radius:8px;background:#f0efe8;cursor:pointer;font-size:12px;font-weight:500;color:#555;text-align:center;transition:all .15s;white-space:nowrap}
+.tab.active{background:#fff;color:#111;border-color:#aaa;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.panel{display:none}.panel.active{display:block}
+.video-wrap{position:relative;border-radius:12px;overflow:hidden;background:#111;width:100%;aspect-ratio:16/9}
+.video-wrap video{width:100%;height:100%;object-fit:cover;display:block}
+canvas.overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.controls{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.btn{padding:9px 14px;border:1px solid #ccc;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;font-weight:500;color:#111;display:inline-flex;align-items:center;gap:6px;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:#1a1a2e;color:#fff;border-color:#1a1a2e}
+.btn.green{background:#27ae60;color:#fff;border-color:#27ae60}
+.btn.danger{border-color:#e74c3c;color:#e74c3c}
+.btn.orange{background:#f39c12;color:#fff;border-color:#f39c12}
+.btn.blue{background:#3498db;color:#fff;border-color:#3498db}
+.btn.sm{padding:5px 10px;font-size:11px}
+.btn:disabled{opacity:.35;pointer-events:none}
+.big-btn{width:100%;padding:14px;font-size:15px;font-weight:600;border:none;border-radius:10px;margin-top:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;transition:all .15s}
+.big-btn:active{transform:scale(.98)}
+.big-btn:disabled{opacity:.35;pointer-events:none}
+.status{margin-top:8px;padding:9px 12px;border-radius:8px;background:#f0efe8;font-size:13px;color:#555;display:flex;align-items:center;gap:8px;min-height:38px}
+.dot{width:8px;height:8px;border-radius:50%;background:#bbb;flex-shrink:0}
+.dot.g{background:#2ecc71}.dot.r{background:#e74c3c}.dot.y{background:#f1c40f;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.card{background:#fff;border:1px solid #e0e0d8;border-radius:12px;padding:1rem 1.25rem;margin-top:1rem}
+.card h3{font-size:14px;font-weight:600;margin-bottom:10px}
+.field{margin-bottom:10px}
+.field label{font-size:12px;color:#666;display:block;margin-bottom:4px}
+.field input,.field select{width:100%;padding:9px 10px;border:1px solid #ddd;border-radius:8px;background:#fafafa;color:#111;font-size:14px;font-family:inherit}
+.snaps{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;min-height:36px}
+.snaps img{width:68px;height:68px;border-radius:8px;object-fit:cover;border:2px solid #ddd}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:1rem}
+.scard{background:#fff;border:1px solid #e0e0d8;border-radius:12px;padding:12px;text-align:center;position:relative}
+.scard img{width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #e0e0d8;margin:0 auto 8px;display:block}
+.scard .nm{font-size:13px;font-weight:500;word-break:break-word}
+.scard .meta{font-size:11px;color:#aaa;margin-top:3px}
+.del{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:#ffe5e5;color:#e74c3c;border:none;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;padding:0}
+.rlist{margin-top:1rem;display:flex;flex-direction:column;gap:8px}
+.ritem{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border:1px solid #e0e0d8;border-radius:10px}
+.ritem img{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.ritem .av{width:44px;height:44px;border-radius:50%;background:#f0efe8;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px}
+.ritem .inf{flex:1;min-width:0}
+.ritem .nm{font-size:14px;font-weight:500}
+.ritem .ct{font-size:12px;color:#666;margin-top:2px}
+.cbar{height:5px;border-radius:3px;background:#e0e0d8;margin-top:5px;overflow:hidden}
+.cfill{height:100%;border-radius:3px;transition:width .4s}
+.badge{display:inline-flex;align-items:center;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:500;margin-right:4px}
+.badge.ok{background:#e8f8f0;color:#27ae60}
+.badge.no{background:#fef0ee;color:#e74c3c}
+.badge.late{background:#fef5e7;color:#f39c12}
+.badge.exc{background:#e8f4fd;color:#3498db}
+.empty{text-align:center;padding:2rem;color:#aaa;font-size:13px}
+.prog{width:100%;height:6px;background:#e0e0d8;border-radius:3px;overflow:hidden;margin-top:8px}
+.prog-fill{height:100%;background:#4a90d9;border-radius:3px;transition:width .3s}
+.notice{padding:10px 14px;background:#e8f4fd;border:1px solid #b3d9f7;border-radius:8px;font-size:12px;color:#1a5276;margin-bottom:1rem}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.class-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}
+.class-card{background:#fff;border:2px solid #e0e0d8;border-radius:12px;padding:15px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+.class-card:hover{border-color:#3498db;transform:translateY(-2px)}
+.class-card .nm{font-size:14px;font-weight:600;margin-bottom:5px}
+.class-card .meta{font-size:11px;color:#666}
+.att-list{margin-top:10px}
+.att-item{display:flex;align-items:center;gap:10px;padding:10px;background:#fff;border:1px solid #e0e0d8;border-radius:10px;margin-bottom:6px;flex-wrap:wrap}
+.att-item img{width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #e0e0d8}
+.att-item .av{width:40px;height:40px;border-radius:50%;background:#f0efe8;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.att-item .inf{flex:1;min-width:120px}
+.att-item .nm{font-size:13px;font-weight:500}
+.att-item .time{font-size:10px;color:#999;margin-top:2px}
+.att-actions{display:flex;gap:4px;flex-wrap:wrap}
+.att-btn{padding:6px 10px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;font-weight:500;transition:all .15s;min-width:60px;text-align:center}
+.att-btn.active-present{background:#27ae60;color:#fff;border-color:#27ae60}
+.att-btn.active-absent{background:#e74c3c;color:#fff;border-color:#e74c3c}
+.att-btn.active-late{background:#f39c12;color:#fff;border-color:#f39c12}
+.att-btn.active-excused{background:#3498db;color:#fff;border-color:#3498db}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:15px}
+.stat-box{background:#fff;border:1px solid #e0e0d8;border-radius:10px;padding:12px;text-align:center}
+.stat-box .num{font-size:22px;font-weight:700;margin-bottom:3px}
+.stat-box .lbl{font-size:11px;color:#666}
+.stat-box.present .num{color:#27ae60}
+.stat-box.absent .num{color:#e74c3c}
+.stat-box.late .num{color:#f39c12}
+.stat-box.rate .num{color:#3498db}
+.history-item{background:#fff;border:1px solid #e0e0d8;border-radius:10px;padding:12px;margin-bottom:8px}
+.history-item .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px}
+.history-item .dt{font-weight:600;font-size:13px}
+.history-item .cls{font-size:11px;color:#666;background:#f0efe8;padding:2px 8px;border-radius:10px}
+.history-students{display:flex;flex-wrap:wrap;gap:4px}
+.h-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+.h-badge.p{background:#e8f8f0;color:#27ae60}
+.h-badge.a{background:#fef0ee;color:#e74c3c}
+.h-badge.l{background:#fef5e7;color:#f39c12}
+.h-badge.e{background:#e8f4fd;color:#3498db}
+.date-picker{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.date-picker input{padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit}
+.divider{height:1px;background:#e0e0d8;margin:12px 0}
+.alert{padding:10px 14px;border-radius:8px;font-size:12px;margin:8px 0}
+.alert.info{background:#e8f4fd;color:#1a5276;border:1px solid #b3d9f7}
+.alert.success{background:#e8f8f0;color:#1e8449;border:1px solid #a9dfbf}
+.alert.warn{background:#fef5e7;color:#7d5a1f;border:1px solid #f9d895}
+
+/* Smart Attendance */
+.time-config{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.excused-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;min-height:30px;padding:8px;background:#fafafa;border-radius:8px;border:1px dashed #ddd}
+.excused-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#e8f4fd;color:#3498db;border-radius:12px;font-size:11px;font-weight:500}
+.excused-chip .x{cursor:pointer;font-weight:bold;color:#999}
+.live-timer{font-size:12px;padding:6px 10px;background:#1a1a2e;color:#fff;border-radius:6px;font-family:'Courier New',monospace;display:inline-block;margin:5px 0}
+.scan-log{max-height:200px;overflow-y:auto;background:#f9f9f9;border:1px solid #e0e0d8;border-radius:8px;padding:8px;font-size:11px;font-family:'Courier New',monospace;margin-top:10px}
+.log-entry{padding:3px 0;border-bottom:1px solid #f0f0f0;display:flex;gap:8px;align-items:center}
+.log-entry .tm{color:#999;min-width:60px}
+.log-entry.p{color:#27ae60}.log-entry.l{color:#f39c12}
+.att-float{position:fixed;bottom:20px;right:20px;background:#fff;border:2px solid #3498db;border-radius:12px;padding:10px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:9998;max-width:320px;display:none}
+.att-float.show{display:block;animation:slideIn .3s}
+@keyframes slideIn{from{transform:translateY(100px);opacity:0}to{transform:translateY(0);opacity:1}}
+.att-float video{width:280px;height:160px;object-fit:cover;border-radius:8px;background:#111}
+.att-float .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.att-float .hdr span{font-weight:600;font-size:13px}
+.att-float .stats{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.att-float .mini-stat{font-size:10px;padding:2px 6px;border-radius:8px;font-weight:500}
+.att-float .mini-stat.p{background:#e8f8f0;color:#27ae60}
+.att-float .mini-stat.l{background:#fef5e7;color:#f39c12}
+.auto-badge{font-size:9px;background:#1a1a2e;color:#fff;padding:1px 5px;border-radius:8px;margin-right:4px}
+.mode-toggle{display:flex;gap:5px;margin-bottom:10px}
+.mode-btn{flex:1;padding:10px;border:2px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:12px;text-align:center;transition:all .15s}
+.mode-btn.active{border-color:#3498db;background:#e8f4fd;color:#1a5276}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🎓 نظام حضور ذكي بالتوقيت</h1>
+  <p class="sub">تصنيف تلقائي: حاضر | متأخر | مبرر | غائب — بناءً على وقت الكشف</p>
+
+  <div class="notice" id="load-notice">
+    ⏳ جاري تحميل نماذج الذكاء الاصطناعي...
+    <div class="prog"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" onclick="switchTab('register')" role="tab">📸 تسجيل</button>
+    <button class="tab" onclick="switchTab('students')" role="tab">👥 الطلاب <span id="cnt" style="background:#e8f0fe;color:#2563eb;border-radius:10px;padding:1px 6px;font-size:11px;margin-right:3px">0</span></button>
+    <button class="tab" onclick="switchTab('classes')" role="tab">🏫 الحصص</button>
+    <button class="tab" onclick="switchTab('attendance')" role="tab">✅ حضور</button>
+    <button class="tab" onclick="switchTab('history')" role="tab">📊 سجل</button>
+  </div>
+
+  <!-- تسجيل -->
+  <div id="panel-register" class="panel active" role="tabpanel">
+    <div class="video-wrap">
+      <video id="reg-vid" autoplay playsinline muted webkit-playsinline></video>
+      <canvas id="reg-overlay" class="overlay"></canvas>
+    </div>
+    <div class="controls">
+      <button class="btn primary" onclick="startRegCam()" id="btn-rs" aria-label="تشغيل الكاميرا">▶ تشغيل</button>
+      <button class="btn danger" onclick="stopRegCam()" id="btn-rstop" disabled aria-label="إيقاف">✕ إيقاف</button>
+      <button class="btn" onclick="flipCam('reg')" id="btn-rflip" style="display:none" aria-label="قلب">🔄</button>
+    </div>
+    <button class="big-btn green" onclick="capturePhoto()" id="btn-cap" disabled style="background:#27ae60;color:#fff">
+      📷 التقاط صورة
+    </button>
+    <div class="status"><div class="dot" id="rd"></div><span id="rs">اضغط "تشغيل"</span></div>
+
+    <div class="card">
+      <h3>بيانات الطالب</h3>
+      <div class="field"><label for="inp-name">الاسم الكامل *</label><input id="inp-name" type="text" placeholder="مثال: محمد أحمد" autocomplete="off"></div>
+      <div class="field"><label for="inp-id">الرقم الدراسي</label><input id="inp-id" type="text" placeholder="2024001" autocomplete="off"></div>
+      <div style="font-size:12px;color:#666;margin-bottom:6px">الصور الملتقطة (3 صور من زوايا مختلفة):</div>
+      <div class="snaps" id="snaps"><span style="font-size:12px;color:#aaa">لا توجد صور بعد</span></div>
+      <div id="snap-cnt" style="font-size:12px;color:#27ae60;margin-top:5px"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn primary" onclick="saveStudent()" id="btn-save" disabled>💾 حفظ الطالب</button>
+        <button class="btn danger" onclick="clearSnaps()">🗑 مسح الصور</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- الطلاب -->
+  <div id="panel-students" class="panel" role="tabpanel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span style="font-size:15px;font-weight:500">الطلاب المسجلون</span>
+      <button class="btn danger" onclick="clearAll()">🗑 مسح الكل</button>
+    </div>
+    <div class="grid" id="students-grid">
+      <div class="empty" style="grid-column:1/-1">لا يوجد طلاب بعد</div>
+    </div>
+  </div>
+
+  <!-- الحصص -->
+  <div id="panel-classes" class="panel" role="tabpanel">
+    <div class="card">
+      <h3>➕ إنشاء حصة جديدة</h3>
+      <div class="field"><label>اسم الحصة *</label><input id="cls-name" type="text" placeholder="مثال: رياضيات - فصل 5أ" autocomplete="off"></div>
+      <div class="field"><label>وصف (اختياري)</label><input id="cls-desc" type="text" placeholder="مثال: الحصة الثانية" autocomplete="off"></div>
+      <div class="time-config">
+        <div class="field" style="margin:0">
+          <label>وقت البداية</label>
+          <input id="cls-start" type="time" value="08:00">
+        </div>
+        <div class="field" style="margin:0">
+          <label>فترة السماح (دقيقة)</label>
+          <input id="cls-grace" type="number" value="10" min="0" max="60">
+        </div>
+      </div>
+      <div style="font-size:11px;color:#666;margin-top:5px">
+        💡 الحضور خلال فترة السماح = <b>حاضر</b> | بعدها = <b>متأخر</b>
+      </div>
+      <button class="btn primary" onclick="createClass()" style="margin-top:10px">➕ إنشاء الحصة</button>
+    </div>
+
+    <div class="card">
+      <h3>🏫 الحصص الدراسية</h3>
+      <div class="class-grid" id="classes-grid">
+        <div class="empty" style="grid-column:1/-1">لا توجد حصص بعد</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- الحضور -->
+  <div id="panel-attendance" class="panel" role="tabpanel">
+    <div class="card">
+      <h3>📋 تسجيل الحضور الذكي</h3>
+      <div class="field">
+        <label>اختر الحصة</label>
+        <select id="att-class" onchange="onClassChange()">
+          <option value="">-- اختر حصة --</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>التاريخ</label>
+        <input type="date" id="att-date" onchange="loadAttendance()">
+      </div>
+
+      <div id="att-session-info" style="display:none">
+        <div class="divider"></div>
+        <div id="att-class-config" style="margin-bottom:10px"></div>
+        
+        <div class="mode-toggle">
+          <button class="mode-btn active" onclick="setAttMode('auto')" id="mode-auto">🤖 تلقائي بالوجه</button>
+          <button class="mode-btn" onclick="setAttMode('manual')" id="mode-manual">✋ يدوي</button>
+        </div>
+
+        <!-- Auto Mode Options -->
+        <div id="auto-options">
+          <div class="alert info">
+            <b>🤖 وضع ذكي:</b> الطلاب الذين سيُكشفون خلال فترة السماح = <span class="badge ok">حاضر</span>، بعدها = <span class="badge late">متأخر</span>
+            <br>الطلاب المحددون مسبقاً كمبررين = <span class="badge exc">مبرر</span> تلقائياً
+            <br>الطلاب غير المكتشفين بنهاية المسح = <span class="badge no">غائب</span>
+          </div>
+
+          <div class="field" style="margin-top:10px">
+            <label>⏰ مدة المسح (دقائق)</label>
+            <input id="scan-duration" type="number" value="15" min="1" max="120">
+            <div style="font-size:11px;color:#666;margin-top:3px">سيُعتبر الطلاب غير المكتشفين "غائبين" بعد انتهاء المدة</div>
+          </div>
+
+          <div class="field">
+            <label>📝 طلاب مبررون مسبقاً (اضغط على الطلاب لإضافتهم):</label>
+            <div id="excused-selector" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px"></div>
+            <div class="excused-list" id="excused-chips"></div>
+          </div>
+        </div>
+
+        <div class="stat-row" id="att-stats" style="margin-top:10px"></div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn blue" onclick="startSmartScan()" id="btn-smart-scan">🤖 بدء المسح الذكي</button>
+          <button class="btn danger" onclick="stopSmartScan()" id="btn-smart-stop" disabled>✕ إيقاف</button>
+          <button class="btn green" onclick="saveAttendance()">💾 حفظ الحضور</button>
+          <button class="btn" onclick="exportCSV()">📥 تصدير CSV</button>
+        </div>
+
+        <!-- Manual Mode -->
+        <div id="manual-options" style="display:none">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <button class="btn orange" onclick="markAll('present')">✓ حاضر الكل</button>
+            <button class="btn danger" onclick="markAll('absent')">✗ غائب الكل</button>
+          </div>
+        </div>
+
+        <div id="scan-progress" style="display:none;margin-top:10px">
+          <div class="alert info" style="display:flex;align-items:center;gap:8px">
+            <div class="dot y"></div>
+            <div style="flex:1">
+              <div style="font-weight:600">جاري المسح الذكي...</div>
+              <div style="font-size:11px;margin-top:2px">الوقت المنقضي: <span class="live-timer" id="elapsed-timer">00:00</span></div>
+            </div>
+          </div>
+          <div class="prog"><div class="prog-fill" id="scan-prog" style="width:0%"></div></div>
+          <div class="scan-log" id="scan-log"></div>
+        </div>
+
+        <div class="att-list" id="att-list">
+          <div class="empty">اختر حصة لبدء تسجيل الحضور</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- السجل -->
+  <div id="panel-history" class="panel" role="tabpanel">
+    <div class="card">
+      <h3>📊 سجلات الحضور</h3>
+      <div class="date-picker">
+        <div class="field" style="flex:1;margin:0;min-width:140px">
+          <label>من تاريخ</label>
+          <input type="date" id="hist-from" onchange="renderHistory()">
+        </div>
+        <div class="field" style="flex:1;margin:0;min-width:140px">
+          <label>إلى تاريخ</label>
+          <input type="date" id="hist-to" onchange="renderHistory()">
+        </div>
+        <div class="field" style="flex:1;margin:0;min-width:140px">
+          <label>الحصة</label>
+          <select id="hist-class" onchange="renderHistory()">
+            <option value="">الكل</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:5px">
+          <button class="btn sm" onclick="exportHistoryCSV()">📥 تصدير</button>
+          <button class="btn sm danger" onclick="clearHistory()">🗑 مسح</button>
+        </div>
+      </div>
+
+      <div id="hist-stats" style="margin:15px 0"></div>
+      <div id="hist-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Floating Camera Widget -->
+<div class="att-float" id="att-float">
+  <div class="hdr">
+    <span>🔍 المسح المباشر</span>
+    <button class="btn sm danger" onclick="stopSmartScan()">✕</button>
+  </div>
+  <video id="float-vid" autoplay playsinline muted webkit-playsinline></video>
+  <div class="stats" id="float-stats"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+<script>
+localforage.config({ name: 'smart_attendance_db', storeName: 'main_store' });
+
+const state = {
+  regStream: null, attStream: null,
+  regFacing: 'user', regReady: false,
+  snaps: [], students: [], classes: [], attendance: [],
+  currentAttendance: {},
+  selectedClassId: null,
+  detectionRAF: null,
+  lastDetectionTime: 0,
+  modelsLoaded: false,
+  scanning: false,
+  scanStartTime: null,
+  scanTimerInterval: null,
+  excusedStudents: [],
+  attMode: 'auto',
+  logEntries: [],
+  detectedStudents: new Set()
+};
+
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.14/model';
+const KEYS = { students: 'smart_students', classes: 'smart_classes', attendance: 'smart_records' };
+const DETECTION_INTERVAL = 800;
+
+async function loadModels() {
+  const prog = document.getElementById('prog-fill');
+  const notice = document.getElementById('load-notice');
+  try {
+    prog.style.width = '15%';
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    prog.style.width = '40%';
+    await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
+    prog.style.width = '70%';
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    prog.style.width = '100%';
+    state.modelsLoaded = true;
+    notice.style.background = '#e8f8f0';
+    notice.style.borderColor = '#a9dfbf';
+    notice.innerHTML = '✅ النماذج جاهزة';
+    setTimeout(() => notice.style.display = 'none', 2000);
+  } catch (e) {
+    notice.style.background = '#fef0ee';
+    notice.innerHTML = '❌ خطأ: ' + e.message;
+  }
+}
+
+function switchTab(t) {
+  const tabs = ['register', 'students', 'classes', 'attendance', 'history'];
+  const btns = document.querySelectorAll('.tab');
+  tabs.forEach((x, i) => {
+    if (!btns[i]) return;
+    const isActive = x === t;
+    btns[i].classList.toggle('active', isActive);
+    const panel = document.getElementById('panel-' + x);
+    if (panel) panel.classList.toggle('active', isActive);
+  });
+  if (t === 'attendance') refreshAttendanceView();
+  if (t === 'history') { initHistoryDates(); renderHistory(); }
+  if (t === 'classes') renderClasses();
+}
+
+// ======= Camera =======
+async function startStream(vid, facing, mode = 'register') {
+  if (vid.srcObject) {
+    try { vid.srcObject.getTracks().forEach(t => t.stop()); } catch (e) { }
+    vid.srcObject = null;
+  }
+  const constraints = mode === 'recognize'
+    ? { video: { facingMode: { ideal: facing }, width: { ideal: 480 }, height: { ideal: 360 } } }
+    : { video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } } };
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia(constraints); }
+  catch (e) {
+    try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing } }); }
+    catch (e2) { stream = await navigator.mediaDevices.getUserMedia({ video: true }); }
+  }
+  vid.srcObject = stream; vid.muted = true;
+  vid.setAttribute('playsinline', ''); vid.setAttribute('webkit-playsinline', '');
+  await new Promise((res) => {
+    if (vid.readyState >= 2) { vid.play().catch(() => { }); res(); return; }
+    let done = false;
+    const finish = () => { if (done) return; done = true; vid.play().catch(() => { }); res(); };
+    vid.onloadeddata = finish; vid.oncanplay = finish;
+    vid.onloadedmetadata = () => { setTimeout(finish, 300); };
+    setTimeout(finish, 6000);
+  });
+  await new Promise(r => setTimeout(r, 500));
+  return stream;
+}
+
+async function startRegCam() {
+  if (!state.modelsLoaded) { setSt('r', 'النماذج تُحمَّل...', 'y'); return; }
+  setSt('r', 'جاري التشغيل...', 'y');
+  document.getElementById('btn-rs').disabled = true;
+  try {
+    state.regStream = await startStream(document.getElementById('reg-vid'), state.regFacing);
+    state.regReady = true;
+    setSt('r', 'الكاميرا تعمل ✓', 'g');
+    document.getElementById('btn-cap').disabled = false;
+    document.getElementById('btn-rstop').disabled = false;
+    document.getElementById('btn-rflip').style.display = 'inline-flex';
+  } catch (e) {
+    setSt('r', 'خطأ: ' + e.message, 'r');
+    document.getElementById('btn-rs').disabled = false;
+  }
+}
+
+function stopRegCam() {
+  if (state.regStream) { state.regStream.getTracks().forEach(t => t.stop()); state.regStream = null; }
+  document.getElementById('reg-vid').srcObject = null; state.regReady = false;
+  document.getElementById('btn-cap').disabled = true;
+  document.getElementById('btn-rstop').disabled = true;
+  document.getElementById('btn-rs').disabled = false;
+  document.getElementById('btn-rflip').style.display = 'none';
+  setSt('r', 'تم الإيقاف', '');
+}
+
+async function flipCam() {
+  state.regFacing = state.regFacing === 'user' ? 'environment' : 'user';
+  stopRegCam(); await startRegCam();
+}
+
+function capturePhoto() {
+  const vid = document.getElementById('reg-vid');
+  if (!state.regReady || !vid.srcObject || vid.readyState < 2) { setSt('r', 'الكاميرا ليست جاهزة', 'r'); return; }
+  const c = document.createElement('canvas');
+  const w = vid.videoWidth || 640, h = vid.videoHeight || 480;
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  if (state.regFacing === 'user') { ctx.translate(w, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(vid, 0, 0, w, h);
+  const url = c.toDataURL('image/jpeg', 0.85);
+  if (url === 'data:,') { setSt('r', 'حاول مجدداً', 'y'); return; }
+  state.snaps.push(url);
+  renderSnaps();
+  setSt('r', `✓ ${state.snaps.length} صورة`, state.snaps.length >= 3 ? 'g' : 'y');
+  updateSaveBtn();
+}
+
+function renderSnaps() {
+  const c = document.getElementById('snaps');
+  const cnt = document.getElementById('snap-cnt');
+  if (!state.snaps.length) { c.innerHTML = '<span style="font-size:12px;color:#aaa">لا توجد صور</span>'; cnt.textContent = ''; return; }
+  c.innerHTML = state.snaps.map((p, i) => `<img src="${p}" alt="صورة ${i + 1}">`).join('');
+  cnt.textContent = state.snaps.length >= 3 ? `✅ جاهز` : `${state.snaps.length}/3`;
+}
+
+function clearSnaps() {
+  state.snaps = []; renderSnaps(); updateSaveBtn(); setSt('r', 'تم المسح', '');
+}
+
+function updateSaveBtn() {
+  document.getElementById('btn-save').disabled = !(document.getElementById('inp-name').value.trim() && state.snaps.length >= 1);
+}
+
+async function saveStudent() {
+  const name = document.getElementById('inp-name').value.trim();
+  const sid = document.getElementById('inp-id').value.trim();
+  if (!name) { setSt('r', 'أدخل الاسم', 'r'); return; }
+  if (!state.snaps.length) { setSt('r', 'التقط صورة', 'r'); return; }
+  setSt('r', 'جاري استخراج البصمة...', 'y');
+  document.getElementById('btn-save').disabled = true;
+  const descriptors = [];
+  for (const snap of state.snaps) {
+    try {
+      const img = await loadImage(snap);
+      const det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks(true).withFaceDescriptor();
+      if (det) descriptors.push(Array.from(det.descriptor));
+    } catch (e) { }
+  }
+  if (!descriptors.length) {
+    setSt('r', 'لم يُكتشف وجه', 'r');
+    document.getElementById('btn-save').disabled = false; return;
+  }
+  const student = {
+    id: Date.now().toString(), name, sid,
+    photos: state.snaps.slice(), descriptors,
+    addedAt: new Date().toLocaleString('ar-SA')
+  };
+  state.students.push(student);
+  await saveData('students');
+  await renderStudents();
+  setSt('r', `✅ تم حفظ "${name}"`, 'g');
+  document.getElementById('inp-name').value = '';
+  document.getElementById('inp-id').value = '';
+  state.snaps = []; renderSnaps();
+  document.getElementById('cnt').textContent = state.students.length;
+  document.getElementById('btn-save').disabled = true;
+}
+
+function loadImage(src) {
+  return new Promise((res, rej) => {
+    const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = src;
+  });
+}
+
+// ======= Students =======
+async function renderStudents() {
+  const g = document.getElementById('students-grid');
+  if (!state.students.length) { g.innerHTML = '<div class="empty" style="grid-column:1/-1">لا يوجد طلاب</div>'; return; }
+  g.innerHTML = state.students.map(s => {
+    let present = 0, absent = 0, late = 0, total = 0;
+    state.attendance.forEach(a => {
+      const rec = a.records[s.id];
+      if (rec) {
+        total++;
+        if (rec.status === 'present') present++;
+        else if (rec.status === 'late') late++;
+        else if (rec.status === 'absent') absent++;
+      }
+    });
+    const rate = total > 0 ? Math.round(((present + late) / total) * 100) : 0;
+    return `<div class="scard">
+      <button class="del" onclick="delStudent('${s.id}')" aria-label="حذف">×</button>
+      ${s.photos?.[0] ? `<img src="${s.photos[0]}" alt="${s.name}">` : `<div style="width:60px;height:60px;border-radius:50%;background:#f0efe8;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:24px">👤</div>`}
+      <div class="nm">${s.name}</div>
+      ${s.sid ? `<div class="meta">${s.sid}</div>` : ''}
+      <div class="meta">✓${present} ⏰${late} ✗${absent}</div>
+      <div class="meta">حضور: ${rate}%</div>
+    </div>`;
+  }).join('');
+}
+
+async function delStudent(id) {
+  const s = state.students.find(x => x.id === id);
+  if (!s || !confirm(`حذف "${s.name}"؟`)) return;
+  state.students = state.students.filter(x => x.id !== id);
+  await saveData('students');
+  await renderStudents();
+  document.getElementById('cnt').textContent = state.students.length;
+}
+
+async function clearAll() {
+  if (!state.students.length) return;
+  if (!confirm('حذف جميع الطلاب؟')) return;
+  state.students = [];
+  await saveData('students');
+  await renderStudents();
+  document.getElementById('cnt').textContent = 0;
+}
+
+// ======= Classes =======
+async function createClass() {
+  const name = document.getElementById('cls-name').value.trim();
+  const desc = document.getElementById('cls-desc').value.trim();
+  const startTime = document.getElementById('cls-start').value;
+  const graceMinutes = parseInt(document.getElementById('cls-grace').value) || 10;
+  if (!name) { alert('أدخل اسم الحصة'); return; }
+  const cls = {
+    id: Date.now().toString(), name, desc, startTime, graceMinutes,
+    createdAt: new Date().toLocaleString('ar-SA')
+  };
+  state.classes.push(cls);
+  await saveData('classes');
+  renderClasses();
+  document.getElementById('cls-name').value = '';
+  document.getElementById('cls-desc').value = '';
+  alert('✅ تم إنشاء الحصة');
+}
+
+function renderClasses() {
+  const g = document.getElementById('classes-grid');
+  if (!state.classes.length) { g.innerHTML = '<div class="empty" style="grid-column:1/-1">لا توجد حصص</div>'; return; }
+  g.innerHTML = state.classes.map(c => {
+    const records = state.attendance.filter(a => a.classId === c.id).length;
+    return `<div class="class-card">
+      <button class="del" onclick="deleteClass('${c.id}')" aria-label="حذف">×</button>
+      <div class="nm">${c.name}</div>
+      <div class="meta">${c.desc || ''}</div>
+      <div class="meta" style="margin-top:5px">⏰ ${c.startTime || '—'} | ⏱ ${c.graceMinutes}د</div>
+      <div class="meta">📊 ${records} جلسة</div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteClass(id) {
+  const cls = state.classes.find(c => c.id === id);
+  if (!cls) return;
+  if (!confirm(`حذف الحصة "${cls.name}"؟`)) return;
+  state.classes = state.classes.filter(c => c.id !== id);
+  state.attendance = state.attendance.filter(a => a.classId !== id);
+  await saveData('classes'); await saveData('attendance');
+  renderClasses(); refreshAttendanceView();
+}
+
+// ======= Attendance =======
+function refreshAttendanceView() {
+  const sel = document.getElementById('att-class');
+  sel.innerHTML = '<option value="">-- اختر حصة --</option>';
+  state.classes.forEach(c => {
+    sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+  });
+  if (!document.getElementById('att-date').value) {
+    document.getElementById('att-date').value = new Date().toISOString().split('T')[0];
+  }
+  if (state.selectedClassId) {
+    sel.value = state.selectedClassId;
+    loadAttendance();
+  }
+}
+
+function onClassChange() {
+  state.selectedClassId = document.getElementById('att-class').value;
+  state.currentAttendance = {};
+  state.excusedStudents = [];
+  loadAttendance();
+}
+
+async function loadAttendance() {
+  const classId = document.getElementById('att-class').value;
+  const date = document.getElementById('att-date').value;
+  const list = document.getElementById('att-list');
+  const info = document.getElementById('att-session-info');
+  
+  if (!classId) {
+    list.innerHTML = '<div class="empty">اختر حصة</div>';
+    info.style.display = 'none'; return;
+  }
+  
+  const cls = state.classes.find(c => c.id === classId);
+  if (!cls) { list.innerHTML = '<div class="empty">الحصة غير موجودة</div>'; return; }
+  
+  const existing = state.attendance.find(a => a.classId === classId && a.date === date);
+  if (existing) {
+    state.currentAttendance = JSON.parse(JSON.stringify(existing.records));
+  } else {
+    state.currentAttendance = {};
+  }
+  
+  if (!state.students.length) {
+    list.innerHTML = '<div class="empty">لا يوجد طلاب</div>';
+    info.style.display = 'none'; return;
+  }
+  
+  info.style.display = 'block';
+  renderClassConfig(cls);
+  renderExcusedSelector();
+  renderAttendanceList();
+  updateAttStats();
+}
+
+function renderClassConfig(cls) {
+  const el = document.getElementById('att-class-config');
+  el.innerHTML = `<div class="alert info">
+    <b>⏰ إعدادات الحصة:</b> البداية ${cls.startTime || '—'} | فترة السماح: ${cls.graceMinutes} دقيقة
+    <br>
+    <small>الحضور خلال فترة السماح = <span class="badge ok">حاضر</span> | بعدها = <span class="badge late">متأخر</span></small>
+  </div>`;
+}
+
+function renderExcusedSelector() {
+  const sel = document.getElementById('excused-selector');
+  sel.innerHTML = state.students.map(s => {
+    const isExcused = state.excusedStudents.includes(s.id);
+    return `<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:12px;font-size:11px;cursor:pointer;${isExcused ? 'background:#3498db;color:#fff' : 'background:#f0efe8;color:#555'}" onclick="toggleExcused('${s.id}')">
+      ${isExcused ? '✓' : '+'} ${s.name}
+    </div>`;
+  }).join('');
+  renderExcusedChips();
+}
+
+function toggleExcused(studentId) {
+  const idx = state.excusedStudents.indexOf(studentId);
+  if (idx >= 0) state.excusedStudents.splice(idx, 1);
+  else state.excusedStudents.push(studentId);
+  
+  // Auto-update attendance status
+  if (state.excusedStudents.includes(studentId)) {
+    state.currentAttendance[studentId] = {
+      status: 'excused',
+      time: '—',
+      manual: true,
+      autoExcused: true
+    };
+  } else {
+    const rec = state.currentAttendance[studentId];
+    if (rec?.autoExcused) delete state.currentAttendance[studentId];
+  }
+  
+  renderExcusedSelector();
+  renderAttendanceList();
+  updateAttStats();
+}
+
+function renderExcusedChips() {
+  const el = document.getElementById('excused-chips');
+  if (!state.excusedStudents.length) {
+    el.innerHTML = '<span style="font-size:11px;color:#aaa">لم يتم تحديد طلاب مبررين</span>';
+    return;
+  }
+  el.innerHTML = state.excusedStudents.map(sid => {
+    const s = state.students.find(x => x.id === sid);
+    if (!s) return '';
+    return `<div class="excused-chip">${s.name}<span class="x" onclick="toggleExcused('${sid}')">×</span></div>`;
+  }).join('');
+}
+
+function setAttMode(mode) {
+  state.attMode = mode;
+  document.getElementById('mode-auto').classList.toggle('active', mode === 'auto');
+  document.getElementById('mode-manual').classList.toggle('active', mode === 'manual');
+  document.getElementById('auto-options').style.display = mode === 'auto' ? 'block' : 'none';
+  document.getElementById('manual-options').style.display = mode === 'manual' ? 'block' : 'none';
+  document.getElementById('btn-smart-scan').style.display = mode === 'auto' ? 'inline-flex' : 'none';
+  document.getElementById('btn-smart-stop').style.display = mode === 'auto' ? 'inline-flex' : 'none';
+}
+
+function renderAttendanceList() {
+  const list = document.getElementById('att-list');
+  if (!state.students.length) { list.innerHTML = '<div class="empty">لا يوجد طلاب</div>'; return; }
+  
+  list.innerHTML = state.students.map(s => {
+    const rec = state.currentAttendance[s.id];
+    const status = rec?.status || 'none';
+    const time = rec?.time || '';
+    const isAuto = rec?.auto;
+    const statusLabel = {
+      'none': 'لم يُسجّل',
+      'present': '✓ حاضر',
+      'absent': '✗ غائب',
+      'late': '⏰ متأخر',
+      'excused': '📝 مبرر'
+    }[status];
+    
+    return `<div class="att-item">
+      ${s.photos?.[0] ? `<img src="${s.photos[0]}" alt="${s.name}">` : `<div class="av">👤</div>`}
+      <div class="inf">
+        <div class="nm">${s.name} ${isAuto ? '<span class="auto-badge">تلقائي</span>' : ''}</div>
+        <div class="time">${time && time !== '—' ? `⏰ ${time} — ` : ''}${statusLabel}</div>
+      </div>
+      <div class="att-actions">
+        <button class="att-btn ${status === 'present' ? 'active-present' : ''}" onclick="setAttStatus('${s.id}','present')">✓</button>
+        <button class="att-btn ${status === 'late' ? 'active-late' : ''}" onclick="setAttStatus('${s.id}','late')">⏰</button>
+        <button class="att-btn ${status === 'absent' ? 'active-absent' : ''}" onclick="setAttStatus('${s.id}','absent')">✗</button>
+        <button class="att-btn ${status === 'excused' ? 'active-excused' : ''}" onclick="setAttStatus('${s.id}','excused')">📝</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setAttStatus(studentId, status) {
+  const current = state.currentAttendance[studentId];
+  if (current?.status === status) {
+    delete state.currentAttendance[studentId];
+  } else {
+    state.currentAttendance[studentId] = {
+      status,
+      time: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+      manual: true
+    };
+    // Remove from excused if manually changed
+    const excIdx = state.excusedStudents.indexOf(studentId);
+    if (excIdx >= 0 && status !== 'excused') state.excusedStudents.splice(excIdx, 1);
+  }
+  renderExcusedSelector();
+  renderAttendanceList();
+  updateAttStats();
+}
+
+function markAll(status) {
+  const time = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+  state.students.forEach(s => {
+    if (!state.excusedStudents.includes(s.id)) {
+      state.currentAttendance[s.id] = { status, time, manual: true };
+    }
+  });
+  renderAttendanceList();
+  updateAttStats();
+}
+
+function updateAttStats() {
+  const stats = document.getElementById('att-stats');
+  const counts = { present: 0, absent: 0, late: 0, excused: 0, none: 0 };
+  state.students.forEach(s => {
+    const rec = state.currentAttendance[s.id];
+    if (rec) counts[rec.status]++;
+    else counts.none++;
+  });
+  const total = state.students.length;
+  const rate = total > 0 ? Math.round(((counts.present + counts.late + counts.excused) / total) * 100) : 0;
+  
+  stats.innerHTML = `
+    <div class="stat-box present"><div class="num">${counts.present}</div><div class="lbl">حاضر</div></div>
+    <div class="stat-box late"><div class="num">${counts.late}</div><div class="lbl">متأخر</div></div>
+    <div class="stat-box absent"><div class="num">${counts.absent}</div><div class="lbl">غائب</div></div>
+    <div class="stat-box"><div class="num">${counts.excused}</div><div class="lbl">مبرر</div></div>
+    <div class="stat-box rate"><div class="num">${rate}%</div><div class="lbl">الحضور</div></div>
+  `;
+}
+
+// ======= SMART SCANNING - The Key Feature =======
+async function startSmartScan() {
+  const classId = document.getElementById('att-class').value;
+  if (!classId) { alert('اختر حصة'); return; }
+  if (!state.students.length) { alert('لا يوجد طلاب'); return; }
+  if (!state.modelsLoaded) { alert('النماذج تُحمَّل...'); return; }
+  
+  // Apply pre-set excused students
+  state.excusedStudents.forEach(sid => {
+    if (!state.currentAttendance[sid]) {
+      state.currentAttendance[sid] = {
+        status: 'excused',
+        time: '—',
+        autoExcused: true
+      };
+    }
+  });
+  
+  state.scanning = true;
+  state.scanStartTime = Date.now();
+  state.detectedStudents = new Set();
+  state.logEntries = [];
+  
+  // Show UI
+  const float = document.getElementById('att-float');
+  float.classList.add('show');
+  document.getElementById('scan-progress').style.display = 'block';
+  document.getElementById('btn-smart-scan').disabled = true;
+  document.getElementById('btn-smart-stop').disabled = false;
+  renderAttendanceList();
+  updateAttStats();
+  
+  try {
+    const vid = document.getElementById('float-vid');
+    state.attStream = await startStream(vid, 'user', 'recognize');
+    startSmartDetectionLoop();
+    startScanTimer();
+    addLog('🚀 بدأ المسح الذكي', 'info');
+  } catch (e) {
+    alert('خطأ: ' + e.message);
+    stopSmartScan();
+  }
+}
+
+function startScanTimer() {
+  const duration = parseInt(document.getElementById('scan-duration').value) || 15;
+  const durationMs = duration * 60 * 1000;
+  
+  state.scanTimerInterval = setInterval(() => {
+    const elapsed = Date.now() - state.scanStartTime;
+    const secs = Math.floor(elapsed / 1000);
+    const mins = Math.floor(secs / 60);
+    const remaining = secs % 60;
+    document.getElementById('elapsed-timer').textContent = 
+      `${String(mins).padStart(2, '0')}:${String(remaining).padStart(2, '0')}`;
+    
+    const progress = Math.min(100, (elapsed / durationMs) * 100);
+    document.getElementById('scan-prog').style.width = progress + '%';
+    
+    if (elapsed >= durationMs) {
+      addLog('⏱️ انتهت المدة، الطلاب غير المكتشفين = غائبون', 'warn');
+      finishSmartScan();
+    }
+  }, 1000);
+}
+
+function startSmartDetectionLoop() {
+  if (state.detectionRAF) cancelAnimationFrame(state.detectionRAF);
+  function loop(timestamp) {
+    if (!state.scanning) return;
+    if (timestamp - state.lastDetectionTime >= DETECTION_INTERVAL) {
+      state.lastDetectionTime = timestamp;
+      detectSmartAttendance().catch(e => console.error(e));
+    }
+    state.detectionRAF = requestAnimationFrame(loop);
+  }
+  state.detectionRAF = requestAnimationFrame(loop);
+}
+
+async function detectSmartAttendance() {
+  const vid = document.getElementById('float-vid');
+  if (!vid.srcObject || vid.readyState < 2) return;
+  
+  try {
+    const detections = await faceapi.detectAllFaces(vid, 
+      new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 }))
+      .withFaceLandmarks(true).withFaceDescriptors();
+    
+    if (!detections.length) return;
+    
+    const labeled = state.students.filter(s => s.descriptors?.length)
+      .map(s => new faceapi.LabeledFaceDescriptors(s.name, s.descriptors.map(d => new Float32Array(d))));
+    if (!labeled.length) return;
+    
+    const matcher = new faceapi.FaceMatcher(labeled, 0.5);
+    const classId = document.getElementById('att-class').value;
+    const cls = state.classes.find(c => c.id === classId);
+    
+    detections.forEach(det => {
+      const match = matcher.findBestMatch(det.descriptor);
+      if (match.label !== 'unknown') {
+        const student = state.students.find(s => s.name === match.label);
+        if (student && !state.detectedStudents.has(student.id)) {
+          state.detectedStudents.add(student.id);
+          
+          // Determine status based on timing
+          const status = determineSmartStatus(student.id, cls);
+          const time = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+          
+          // Only set if not manually set or auto-excused
+          const existing = state.currentAttendance[student.id];
+          if (!existing || existing.autoExcused) {
+            state.currentAttendance[student.id] = {
+              status: status.status,
+              time: time,
+              auto: true,
+              detectionTime: Date.now()
+            };
+            
+            const statusEmoji = { present: '✓', late: '⏰', excused: '📝' }[status.status];
+            const statusText = { present: 'حاضر', late: 'متأخر', excused: 'مبرر' }[status.status];
+            addLog(`${statusEmoji} ${student.name}: ${statusText} ${status.reason}`, status.status === 'present' ? 'p' : 'l');
+            
+            renderAttendanceList();
+            updateAttStats();
+            updateFloatStats();
+          }
+        }
+      }
+    });
+  } catch (e) { }
+}
+
+function determineSmartStatus(studentId, cls) {
+  // Pre-set excused students take priority
+  if (state.excusedStudents.includes(studentId)) {
+    return { status: 'excused', reason: '(محدد مسبقاً)' };
+  }
+  
+  const scanStart = state.scanStartTime;
+  const elapsedMinutes = (Date.now() - scanStart) / 1000 / 60;
+  const graceMinutes = cls?.graceMinutes || 10;
+  
+  if (elapsedMinutes <= graceMinutes) {
+    return { 
+      status: 'present', 
+      reason: `(خلال فترة السماح - ${Math.round(elapsedMinutes)}د)`
+    };
+  } else {
+    return { 
+      status: 'late', 
+      reason: `(بعد ${Math.round(elapsedMinutes)}د - تجاوز فترة ${graceMinutes}د)`
+    };
+  }
+}
+
+function updateFloatStats() {
+  const stats = document.getElementById('float-stats');
+  let p = 0, l = 0, a = 0, e = 0;
+  state.students.forEach(s => {
+    const rec = state.currentAttendance[s.id];
+    if (!rec) return;
+    if (rec.status === 'present') p++;
+    else if (rec.status === 'late') l++;
+    else if (rec.status === 'absent') a++;
+    else if (rec.status === 'excused') e++;
+  });
+  stats.innerHTML = `
+    <div class="mini-stat p">✓ ${p} حاضر</div>
+    <div class="mini-stat l">⏰ ${l} متأخر</div>
+    <div class="mini-stat" style="background:#e8f4fd;color:#3498db">📝 ${e} مبرر</div>
+  `;
+}
+
+function addLog(msg, type = 'info') {
+  const time = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  state.logEntries.unshift({ time, msg, type });
+  if (state.logEntries.length > 50) state.logEntries.pop();
+  
+  const log = document.getElementById('scan-log');
+  log.innerHTML = state.logEntries.map(e => 
+    `<div class="log-entry ${e.type}"><span class="tm">${e.time}</span><span>${e.msg}</span></div>`
+  ).join('');
+  log.scrollTop = 0;
+}
+
+function finishSmartScan() {
+  // Mark undetected students as absent
+  state.students.forEach(s => {
+    if (!state.currentAttendance[s.id] && !state.excusedStudents.includes(s.id)) {
+      state.currentAttendance[s.id] = {
+        status: 'absent',
+        time: '—',
+        auto: true,
+        reason: 'لم يُكشف'
+      };
+      addLog(`✗ ${s.name}: غائب (لم يُكشف)`, 'a');
+    }
+  });
+  
+  stopSmartScan();
+  renderAttendanceList();
+  updateAttStats();
+  alert('✅ اكتمل المسح — يمكنك مراجعة النتائج وتعديلها قبل الحفظ');
+}
+
+function stopSmartScan() {
+  state.scanning = false;
+  if (state.detectionRAF) { cancelAnimationFrame(state.detectionRAF); state.detectionRAF = null; }
+  if (state.scanTimerInterval) { clearInterval(state.scanTimerInterval); state.scanTimerInterval = null; }
+  if (state.attStream) { state.attStream.getTracks().forEach(t => t.stop()); state.attStream = null; }
+  const vid = document.getElementById('float-vid');
+  if (vid) vid.srcObject = null;
+  document.getElementById('att-float').classList.remove('show');
+  document.getElementById('scan-progress').style.display = 'none';
+  document.getElementById('btn-smart-scan').disabled = false;
+  document.getElementById('btn-smart-stop').disabled = true;
+  renderAttendanceList();
+  updateAttStats();
+}
+
+async function saveAttendance() {
+  const classId = document.getElementById('att-class').value;
+  const date = document.getElementById('att-date').value;
+  if (!classId || !date) { alert('اختر الحصة والتاريخ'); return; }
+  
+  const existingIdx = state.attendance.findIndex(a => a.classId === classId && a.date === date);
+  const record = {
+    id: existingIdx >= 0 ? state.attendance[existingIdx].id : Date.now().toString(),
+    classId, date,
+    records: JSON.parse(JSON.stringify(state.currentAttendance)),
+    savedAt: new Date().toLocaleString('ar-SA')
+  };
+  
+  if (existingIdx >= 0) state.attendance[existingIdx] = record;
+  else state.attendance.push(record);
+  
+  await saveData('attendance');
+  alert('✅ تم حفظ الحضور');
+  renderClasses();
+}
+
+function exportCSV() {
+  const classId = document.getElementById('att-class').value;
+  const date = document.getElementById('att-date').value;
+  if (!classId || !date) { alert('اختر الحصة والتاريخ'); return; }
+  const cls = state.classes.find(c => c.id === classId);
+  
+  let csv = '\uFEFF';
+  csv += `الحصة,${cls.name}\n`;
+  csv += `التاريخ,${date}\n`;
+  csv += `وقت البداية,${cls.startTime}\n`;
+  csv += `فترة السماح,${cls.graceMinutes} دقيقة\n\n`;
+  csv += `الاسم,الرقم,الحالة,الوقت,طريقة التسجيل\n`;
+  
+  state.students.forEach(s => {
+    const rec = state.currentAttendance[s.id];
+    const status = rec ? { present: 'حاضر', absent: 'غائب', late: 'متأخر', excused: 'مبرر' }[rec.status] : 'لم يُسجّل';
+    const method = rec?.auto ? 'تلقائي' : (rec ? 'يدوي' : '—');
+    csv += `${s.name},${s.sid || ''},${status},${rec?.time || ''},${method}\n`;
+  });
+  
+  downloadFile(`attendance_${cls.name}_${date}.csv`, csv);
+}
+
+// ======= History =======
+function initHistoryDates() {
+  const from = document.getElementById('hist-from');
+  const to = document.getElementById('hist-to');
+  if (!from.value) {
+    const d = new Date(); d.setDate(d.getDate() - 30);
+    from.value = d.toISOString().split('T')[0];
+  }
+  if (!to.value) to.value = new Date().toISOString().split('T')[0];
+  
+  const sel = document.getElementById('hist-class');
+  sel.innerHTML = '<option value="">الكل</option>';
+  state.classes.forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.name}</option>`; });
+}
+
+function renderHistory() {
+  const from = document.getElementById('hist-from').value;
+  const to = document.getElementById('hist-to').value;
+  const classId = document.getElementById('hist-class').value;
+  
+  let filtered = state.attendance.filter(a => {
+    if (from && a.date < from) return false;
+    if (to && a.date > to) return false;
+    if (classId && a.classId !== classId) return false;
+    return true;
+  }).sort((a, b) => b.date.localeCompare(a.date));
+  
+  const stats = document.getElementById('hist-stats');
+  let present = 0, absent = 0, late = 0, excused = 0, auto = 0;
+  filtered.forEach(a => {
+    Object.values(a.records).forEach(r => {
+      if (r.status === 'present') present++;
+      else if (r.status === 'absent') absent++;
+      else if (r.status === 'late') late++;
+      else if (r.status === 'excused') excused++;
+      if (r.auto) auto++;
+    });
+  });
+  
+  stats.innerHTML = `
+    <div class="stat-row">
+      <div class="stat-box"><div class="num">${filtered.length}</div><div class="lbl">جلسة</div></div>
+      <div class="stat-box present"><div class="num">${present}</div><div class="lbl">حاضر</div></div>
+      <div class="stat-box late"><div class="num">${late}</div><div class="lbl">متأخر</div></div>
+      <div class="stat-box absent"><div class="num">${absent}</div><div class="lbl">غائب</div></div>
+      <div class="stat-box"><div class="num">${excused}</div><div class="lbl">مبرر</div></div>
+      <div class="stat-box rate"><div class="num">${auto}</div><div class="lbl">تلقائي 🤖</div></div>
+    </div>
+  `;
+  
+  const list = document.getElementById('hist-list');
+  if (!filtered.length) { list.innerHTML = '<div class="empty">لا توجد سجلات</div>'; return; }
+  
+  list.innerHTML = filtered.map(a => {
+    const cls = state.classes.find(c => c.id === a.classId);
+    const records = Object.entries(a.records).map(([sid, r]) => {
+      const st = state.students.find(s => s.id === sid);
+      if (!st) return '';
+      const cls = { present: 'p', absent: 'a', late: 'l', excused: 'e' }[r.status];
+      const lbl = { present: 'حاضر', absent: 'غائب', late: 'متأخر', excused: 'مبرر' }[r.status];
+      return `<span class="h-badge ${cls}" title="${r.time || ''}">${st.name}: ${lbl}</span>`;
+    }).join('');
+    
+    return `<div class="history-item">
+      <div class="hdr">
+        <div>
+          <div class="dt">📅 ${a.date}</div>
+          <div class="cls">🏫 ${cls?.name || 'غير معروف'}</div>
+        </div>
+        <div style="display:flex;gap:5px">
+          <button class="btn sm danger" onclick="deleteAttendance('${a.id}')">🗑</button>
+        </div>
+      </div>
+      <div class="history-students">${records}</div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteAttendance(id) {
+  if (!confirm('حذف هذا السجل؟')) return;
+  state.attendance = state.attendance.filter(a => a.id !== id);
+  await saveData('attendance');
+  renderHistory();
+}
+
+async function clearHistory() {
+  if (!state.attendance.length) return;
+  if (!confirm('حذف جميع السجلات؟')) return;
+  state.attendance = [];
+  await saveData('attendance');
+  renderHistory();
+}
+
+function exportHistoryCSV() {
+  const from = document.getElementById('hist-from').value;
+  const to = document.getElementById('hist-to').value;
+  const classId = document.getElementById('hist-class').value;
+  
+  let filtered = state.attendance.filter(a => {
+    if (from && a.date < from) return false;
+    if (to && a.date > to) return false;
+    if (classId && a.classId !== classId) return false;
+    return true;
+  });
+  
+  let csv = '\uFEFF';
+  csv += `التاريخ,الحصة,الاسم,الرقم,الحالة,الوقت,الطريقة\n`;
+  
+  filtered.forEach(a => {
+    const cls = state.classes.find(c => c.id === a.classId);
+    Object.entries(a.records).forEach(([sid, r]) => {
+      const st = state.students.find(s => s.id === sid);
+      if (!st) return;
+      const status = { present: 'حاضر', absent: 'غائب', late: 'متأخر', excused: 'مبرر' }[r.status];
+      const method = r.auto ? 'تلقائي' : 'يدوي';
+      csv += `${a.date},${cls?.name || ''},${st.name},${st.sid || ''},${status},${r.time || ''},${method}\n`;
+    });
+  });
+  
+  downloadFile(`history_${from}_${to}.csv`, csv);
+}
+
+// ======= Storage =======
+async function saveData(type) {
+  try {
+    if (type === 'students') await localforage.setItem(KEYS.students, state.students);
+    else if (type === 'classes') await localforage.setItem(KEYS.classes, state.classes);
+    else if (type === 'attendance') await localforage.setItem(KEYS.attendance, state.attendance);
+  } catch (e) { console.error('Save error:', e); }
+}
+
+async function loadAllData() {
+  try {
+    state.students = (await localforage.getItem(KEYS.students)) || [];
+    state.classes = (await localforage.getItem(KEYS.classes)) || [];
+    state.attendance = (await localforage.getItem(KEYS.attendance)) || [];
+    await renderStudents();
+    renderClasses();
+    document.getElementById('cnt').textContent = state.students.length;
+  } catch (e) { console.error('Load error:', e); }
+}
+
+function setSt(mode, msg, dot) {
+  const id = mode === 'r' ? 'rs' : '';
+  const did = mode === 'r' ? 'rd' : '';
+  if (id) document.getElementById(id).textContent = msg;
+  if (did) { const d = document.getElementById(did); d.className = 'dot' + (dot ? ' ' + dot : ''); }
+}
+
+function clearCanvas(id) {
+  const c = document.getElementById(id);
+  if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height);
+}
+
+function downloadFile(filename, content) {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('inp-name').addEventListener('input', updateSaveBtn);
+loadAllData();
+loadModels();
+</script>
+</body>
+</html>
