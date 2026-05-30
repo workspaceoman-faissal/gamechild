@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>نظام التعرف على وجوه الطلاب</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f0; color: #1a1a1a; direction: rtl; }
+.app { max-width: 900px; margin: 0 auto; padding: 1rem; }
+h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+.subtitle { font-size: 13px; color: #666; margin-bottom: 1rem; }
+.tabs { display: flex; gap: 6px; margin-bottom: 1rem; }
+.tab { flex: 1; padding: 10px 6px; border: 1px solid #ddd; border-radius: 8px; background: #f0efe8; cursor: pointer; font-size: 12px; font-weight: 500; color: #555; transition: all 0.15s; text-align: center; }
+.tab.active { background: #fff; color: #1a1a1a; border-color: #aaa; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.panel { display: none; }
+.panel.active { display: block; }
+.video-wrap { position: relative; border-radius: 12px; overflow: hidden; background: #111; width: 100%; }
+.video-wrap video { width: 100%; height: auto; display: block; min-height: 200px; }
+canvas.overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.controls { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.btn { padding: 10px 14px; border: 1px solid #ccc; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 500; color: #1a1a1a; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
+.btn:active { transform: scale(0.97); }
+.btn.primary { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+.btn.danger { border-color: #e74c3c; color: #e74c3c; }
+.btn:disabled { opacity: 0.35; pointer-events: none; }
+.btn-capture-big { width: 100%; padding: 14px; font-size: 16px; background: #27ae60; color: #fff; border: none; border-radius: 10px; margin-top: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; -webkit-tap-highlight-color: transparent; }
+.btn-capture-big:active { transform: scale(0.98); background: #219a52; }
+.btn-capture-big:disabled { opacity: 0.35; pointer-events: none; }
+.status-bar { margin-top: 8px; padding: 9px 12px; border-radius: 8px; background: #f0efe8; font-size: 13px; color: #555; display: flex; align-items: center; gap: 8px; min-height: 38px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #bbb; flex-shrink: 0; }
+.dot.green { background: #2ecc71; }
+.dot.red { background: #e74c3c; }
+.dot.yellow { background: #f1c40f; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.card { background: #fff; border: 1px solid #e0e0d8; border-radius: 12px; padding: 1rem 1.25rem; margin-top: 1rem; }
+.card h3 { font-size: 15px; font-weight: 500; margin-bottom: 12px; }
+.field { margin-bottom: 10px; }
+.field label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
+.field input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; color: #1a1a1a; font-size: 15px; font-family: inherit; }
+.snap-preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; min-height: 40px; }
+.snap-preview img { width: 70px; height: 70px; border-radius: 8px; object-fit: cover; border: 2px solid #ddd; }
+.snap-count { font-size: 13px; font-weight: 600; color: #27ae60; margin-top: 6px; }
+.students-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 1rem; }
+.student-card { background: #fff; border: 1px solid #e0e0d8; border-radius: 12px; padding: 12px; text-align: center; position: relative; }
+.student-card img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #e0e0d8; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; }
+.student-card .sname { font-size: 13px; font-weight: 500; word-break: break-word; }
+.del-btn { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; background: #ffe5e5; color: #e74c3c; border: none; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 0; }
+.rec-list { margin-top: 1rem; display: flex; flex-direction: column; gap: 8px; }
+.rec-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #fff; border: 1px solid #e0e0d8; border-radius: 10px; }
+.rec-item img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.rec-item .avatar { width: 44px; height: 44px; border-radius: 50%; background: #f0efe8; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 22px; color: #888; }
+.rec-item .info { flex: 1; min-width: 0; }
+.rec-item .rname { font-size: 14px; font-weight: 500; }
+.rec-item .conf-text { font-size: 12px; color: #666; margin-top: 2px; }
+.conf-bar { height: 5px; border-radius: 3px; background: #e0e0d8; margin-top: 6px; overflow: hidden; }
+.conf-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+.badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-right: 4px; }
+.badge.success { background: #e8f8f0; color: #27ae60; }
+.badge.danger { background: #fef0ee; color: #e74c3c; }
+.empty-state { text-align: center; padding: 2rem 1rem; color: #888; font-size: 13px; }
+.empty-state i { font-size: 36px; display: block; margin-bottom: 10px; opacity: 0.4; }
+.count-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; border-radius: 10px; padding: 0 4px; background: #e8f0fe; color: #2563eb; font-size: 11px; font-weight: 600; margin-right: 4px; }
+.notice { padding: 10px 14px; background: #fff9e6; border: 1px solid #f1c40f; border-radius: 8px; font-size: 12px; color: #7d6608; margin-bottom: 1rem; display: flex; gap: 8px; align-items: flex-start; }
+.cam-toggle { font-size: 11px; color: #555; background: #f0efe8; border: 1px solid #ddd; border-radius: 6px; padding: 5px 10px; cursor: pointer; margin-top: 4px; display: inline-flex; align-items: center; gap: 4px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🎓 نظام التعرف على وجوه الطلاب</h1>
+  <p class="subtitle">سجّل الطلاب مع صورهم، ثم وجّه الكاميرا للتعرف عليهم تلقائياً</p>
+
+  <div class="notice">
+    <i class="ti ti-info-circle" style="font-size:16px;flex-shrink:0;margin-top:1px;"></i>
+    <div>يعمل على الهاتف عبر رابط https فقط (GitHub Pages أو Netlify). يحتاج إذن الكاميرا.</div>
+  </div>
+
+  <div id="apikey-section" style="background:#fff;border:1px solid #e0e0d8;border-radius:10px;padding:12px 14px;margin-bottom:1rem;">
+    <div style="font-size:13px;font-weight:500;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+      <i class="ti ti-key" style="font-size:16px;color:#888;"></i>
+      مفتاح Anthropic API
+      <span id="apikey-status" style="font-size:11px;margin-right:auto;"></span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <input type="password" id="inp-apikey" placeholder="sk-ant-..." autocomplete="off"
+        style="flex:1;padding:9px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fafafa;font-family:monospace;">
+      <button class="btn primary" onclick="saveApiKey()" style="padding:9px 14px;white-space:nowrap;">
+        <i class="ti ti-check"></i> حفظ
+      </button>
+    </div>
+    <div style="font-size:11px;color:#888;margin-top:6px;">
+      احصل على مفتاحك من <a href="https://console.anthropic.com/keys" target="_blank" style="color:#2563eb;">console.anthropic.com</a> — يُحفظ في المتصفح فقط ولا يُرسل لأي جهة
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('register')">
+      <i class="ti ti-user-plus"></i><br>تسجيل
+    </button>
+    <button class="tab" onclick="switchTab('recognize')">
+      <i class="ti ti-scan"></i><br>التعرف
+    </button>
+    <button class="tab" onclick="switchTab('students')">
+      <i class="ti ti-users"></i><br>الطلاب <span class="count-badge" id="count-badge">0</span>
+    </button>
+  </div>
+
+  <!-- تبويب التسجيل -->
+  <div id="panel-register" class="panel active">
+    <div class="video-wrap" id="reg-video-wrap">
+      <video id="reg-video" autoplay playsinline muted webkit-playsinline></video>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;">
+      <button class="btn primary" onclick="startRegCamera()" id="btn-reg-start">
+        <i class="ti ti-camera"></i> تشغيل الكاميرا
+      </button>
+      <button class="btn danger" onclick="stopRegCamera()" id="btn-reg-stop" disabled>
+        <i class="ti ti-x"></i> إيقاف
+      </button>
+      <button class="cam-toggle" onclick="flipRegCamera()" id="btn-flip-reg" style="display:none;">
+        <i class="ti ti-camera-rotate"></i> قلب الكاميرا
+      </button>
+    </div>
+
+    <button class="btn-capture-big" onclick="capturePhoto()" id="btn-capture" disabled>
+      <i class="ti ti-camera-selfie" style="font-size:22px;"></i> التقاط صورة
+    </button>
+
+    <div class="status-bar">
+      <div class="dot" id="reg-dot"></div>
+      <span id="reg-status">اضغط "تشغيل الكاميرا" للبدء</span>
+    </div>
+
+    <div class="card">
+      <h3><i class="ti ti-id-badge-2"></i> بيانات الطالب</h3>
+      <div class="field">
+        <label>الاسم الكامل *</label>
+        <input type="text" id="inp-name" placeholder="مثال: محمد أحمد" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>الرقم الدراسي (اختياري)</label>
+        <input type="text" id="inp-id" placeholder="مثال: 2024001" autocomplete="off">
+      </div>
+      <div style="font-size:12px;color:#666;margin-bottom:4px;">
+        الصور الملتقطة — يُنصح بـ 3 صور من زوايا مختلفة:
+      </div>
+      <div class="snap-preview" id="snap-preview">
+        <div style="font-size:12px;color:#aaa;padding:6px 0;">لا توجد صور بعد</div>
+      </div>
+      <div class="snap-count" id="snap-count"></div>
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn primary" onclick="saveStudent()" id="btn-save" disabled>
+          <i class="ti ti-device-floppy"></i> حفظ الطالب
+        </button>
+        <button class="btn" onclick="clearCaptures()">
+          <i class="ti ti-trash"></i> مسح الصور
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- تبويب التعرف -->
+  <div id="panel-recognize" class="panel">
+    <div class="video-wrap">
+      <video id="rec-video" autoplay playsinline muted webkit-playsinline></video>
+      <canvas id="rec-overlay" class="overlay"></canvas>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;">
+      <button class="btn primary" onclick="startRecognition()" id="btn-rec-start">
+        <i class="ti ti-scan"></i> بدء التعرف
+      </button>
+      <button class="btn danger" onclick="stopRecognition()" id="btn-rec-stop" disabled>
+        <i class="ti ti-x"></i> إيقاف
+      </button>
+      <button class="cam-toggle" onclick="flipRecCamera()" id="btn-flip-rec" style="display:none;">
+        <i class="ti ti-camera-rotate"></i> قلب الكاميرا
+      </button>
+    </div>
+
+    <button class="btn-capture-big" onclick="captureAndRecognize()" id="btn-snap-rec" disabled style="background:#2980b9;">
+      <i class="ti ti-eye" style="font-size:22px;"></i> تحليل الآن
+    </button>
+
+    <div class="status-bar">
+      <div class="dot" id="rec-dot"></div>
+      <span id="rec-status">اضغط "بدء التعرف" لتشغيل الكاميرا</span>
+    </div>
+
+    <div id="rec-results" class="rec-list">
+      <div class="empty-state">
+        <i class="ti ti-mood-search"></i>
+        ابدأ التعرف ثم اضغط "تحليل الآن"
+      </div>
+    </div>
+  </div>
+
+  <!-- تبويب الطلاب -->
+  <div id="panel-students" class="panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <span style="font-size:15px;font-weight:500;">الطلاب المسجلون</span>
+      <button class="btn danger" onclick="clearAll()">
+        <i class="ti ti-trash"></i> مسح الكل
+      </button>
+    </div>
+    <div class="students-grid" id="students-grid">
+      <div class="empty-state" style="grid-column:1/-1">
+        <i class="ti ti-users-group"></i>
+        لا يوجد طلاب مسجلون بعد
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- API Key ----
+let ANTHROPIC_API_KEY = '';
+
+function saveApiKey() {
+  const val = document.getElementById('inp-apikey').value.trim();
+  if (!val || val === '••••••••••••••••') {
+    document.getElementById('apikey-status').innerHTML = '<span style="color:#e74c3c;">أدخل المفتاح أولاً</span>';
+    return;
+  }
+  if (!val.startsWith('sk-ant-')) {
+    document.getElementById('apikey-status').innerHTML = '<span style="color:#e74c3c;">مفتاح غير صحيح — يبدأ بـ sk-ant-</span>';
+    return;
+  }
+  ANTHROPIC_API_KEY = val;
+  try { localStorage.setItem('anthropic_key', val); } catch(e) {}
+  document.getElementById('apikey-status').innerHTML = '<span style="color:#27ae60;">✓ تم الحفظ</span>';
+  document.getElementById('inp-apikey').value = '••••••••••••••••';
+}
+
+function loadApiKey() {
+  try {
+    const k = localStorage.getItem('anthropic_key');
+    if (k) {
+      ANTHROPIC_API_KEY = k;
+      document.getElementById('inp-apikey').value = '••••••••••••••••';
+      document.getElementById('apikey-status').innerHTML = '<span style="color:#27ae60;">✓ محفوظ</span>';
+    }
+  } catch(e) {}
+}
+
+async function callClaude(payload) {
+  if (!ANTHROPIC_API_KEY) {
+    throw new Error('أدخل مفتاح API أولاً في الأعلى ثم اضغط حفظ');
+  }
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `HTTP ${resp.status}`);
+  }
+  return resp.json();
+}
+
+// ---- State ----
+let regStream = null;
+let recStream = null;
+let regFacingMode = 'user';
+let recFacingMode = 'environment';
+let capturedPhotos = [];
+let students = [];
+let recInterval = null;
+let isRecognizing = false;
+let regVideoReady = false;
+let recVideoReady = false;
+
+// ---- Tabs ----
+function switchTab(tab) {
+  ['register','recognize','students'].forEach((t, i) => {
+    document.querySelectorAll('.tab')[i].classList.toggle('active', t === tab);
+    document.getElementById('panel-' + t).classList.toggle('active', t === tab);
+  });
+}
+
+// ---- Camera helpers ----
+async function startStream(videoEl, facingMode) {
+  // Stop any existing stream on this element
+  if (videoEl.srcObject) {
+    videoEl.srcObject.getTracks().forEach(t => t.stop());
+    videoEl.srcObject = null;
+  }
+  const constraints = {
+    video: {
+      facingMode: { ideal: facingMode },
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    }
+  };
+  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  videoEl.srcObject = stream;
+  // Wait until video is actually playing
+  await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('timeout')), 8000);
+    videoEl.onloadedmetadata = () => {
+      videoEl.play().then(() => {
+        clearTimeout(timeout);
+        resolve();
+      }).catch(reject);
+    };
+  });
+  return stream;
+}
+
+// ---- Registration camera ----
+async function startRegCamera() {
+  const video = document.getElementById('reg-video');
+  regVideoReady = false;
+  setStatus('reg', 'جاري تشغيل الكاميرا...', 'yellow');
+  document.getElementById('btn-reg-start').disabled = true;
+  try {
+    regStream = await startStream(video, regFacingMode);
+    regVideoReady = true;
+    setStatus('reg', 'الكاميرا تعمل ✓ — اضغط الزر الأخضر لالتقاط الصورة', 'green');
+    document.getElementById('btn-capture').disabled = false;
+    document.getElementById('btn-reg-stop').disabled = false;
+    document.getElementById('btn-flip-reg').style.display = 'inline-flex';
+  } catch (e) {
+    setStatus('reg', 'خطأ في الكاميرا: ' + (e.message || 'تأكد من منح الإذن'), 'red');
+    document.getElementById('btn-reg-start').disabled = false;
+  }
+}
+
+function stopRegCamera() {
+  if (regStream) { regStream.getTracks().forEach(t => t.stop()); regStream = null; }
+  const video = document.getElementById('reg-video');
+  video.srcObject = null;
+  regVideoReady = false;
+  document.getElementById('btn-capture').disabled = true;
+  document.getElementById('btn-reg-stop').disabled = true;
+  document.getElementById('btn-reg-start').disabled = false;
+  document.getElementById('btn-flip-reg').style.display = 'none';
+  setStatus('reg', 'تم إيقاف الكاميرا', '');
+}
+
+async function flipRegCamera() {
+  regFacingMode = regFacingMode === 'user' ? 'environment' : 'user';
+  await startRegCamera();
+}
+
+// ---- Capture photo ----
+function capturePhoto() {
+  const video = document.getElementById('reg-video');
+  if (!regVideoReady || !video.srcObject) {
+    setStatus('reg', 'الكاميرا ليست جاهزة — شغّلها أولاً', 'red');
+    return;
+  }
+  if (video.readyState < 2) {
+    setStatus('reg', 'انتظر حتى تظهر الصورة في الكاميرا', 'yellow');
+    return;
+  }
+  const canvas = document.createElement('canvas');
+  const w = video.videoWidth || video.clientWidth || 640;
+  const h = video.videoHeight || video.clientHeight || 480;
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  // Mirror if front camera
+  if (regFacingMode === 'user') {
+    ctx.translate(w, 0);
+    ctx.scale(-1, 1);
+  }
+  ctx.drawImage(video, 0, 0, w, h);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  if (dataUrl === 'data:,') {
+    setStatus('reg', 'لم يتم التقاط الصورة — انتظر ثانية وحاول مجدداً', 'yellow');
+    return;
+  }
+  capturedPhotos.push(dataUrl);
+  renderSnapshots();
+  setStatus('reg', `✓ تم التقاط ${capturedPhotos.length} صورة`, 'green');
+  updateSaveBtn();
+}
+
+function renderSnapshots() {
+  const c = document.getElementById('snap-preview');
+  const cnt = document.getElementById('snap-count');
+  if (capturedPhotos.length === 0) {
+    c.innerHTML = '<div style="font-size:12px;color:#aaa;padding:6px 0;">لا توجد صور بعد</div>';
+    cnt.textContent = '';
+    return;
+  }
+  c.innerHTML = capturedPhotos.map((p,i) =>
+    `<img src="${p}" alt="صورة ${i+1}">`
+  ).join('');
+  cnt.textContent = capturedPhotos.length >= 3 ? `✓ ${capturedPhotos.length} صور — جيد!` : `${capturedPhotos.length} صور — يُنصح بـ 3 على الأقل`;
+}
+
+function clearCaptures() {
+  capturedPhotos = [];
+  renderSnapshots();
+  updateSaveBtn();
+  setStatus('reg', 'تم مسح الصور', '');
+}
+
+function updateSaveBtn() {
+  const hasName = document.getElementById('inp-name').value.trim();
+  document.getElementById('btn-save').disabled = !(hasName && capturedPhotos.length >= 1);
+}
+
+// ---- Save student ----
+async function saveStudent() {
+  const name = document.getElementById('inp-name').value.trim();
+  const sid = document.getElementById('inp-id').value.trim();
+  if (!name) { setStatus('reg', 'يرجى إدخال اسم الطالب', 'red'); return; }
+  if (capturedPhotos.length < 1) { setStatus('reg', 'يرجى التقاط صورة واحدة على الأقل', 'red'); return; }
+
+  setStatus('reg', 'جاري تحليل الصور بالذكاء الاصطناعي...', 'yellow');
+  document.getElementById('btn-save').disabled = true;
+
+  const descriptions = await analyzePhotosWithAI(capturedPhotos, name);
+  const student = {
+    id: Date.now().toString(),
+    name, sid,
+    photos: capturedPhotos.slice(),
+    descriptions,
+    addedAt: new Date().toLocaleString('ar-SA')
+  };
+  students.push(student);
+  saveToStorage();
+  renderStudents();
+  setStatus('reg', `✓ تم حفظ الطالب "${name}" بنجاح`, 'green');
+  document.getElementById('inp-name').value = '';
+  document.getElementById('inp-id').value = '';
+  capturedPhotos = [];
+  renderSnapshots();
+  document.getElementById('count-badge').textContent = students.length;
+  document.getElementById('btn-save').disabled = true;
+}
+
+async function analyzePhotosWithAI(photos, name) {
+  try {
+    const data = await callClaude({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 800,
+      messages: [{
+        role: "user",
+        content: [
+          ...photos.slice(0, 3).map(p => ({
+            type: "image",
+            source: { type: "base64", media_type: "image/jpeg", data: p.split(',')[1] }
+          })),
+          { type: "text", text: `هذه صور للطالب "${name}". صف بدقة ملامحه الوجهية: لون البشرة، شكل الوجه، لون الشعر وطوله، شكل العيون والأنف والفم، أي ميزات مميزة. أجب بـ JSON فقط:\n{"description": "وصف شامل ومفصل", "features": {"skinTone": "...", "hairColor": "...", "hairStyle": "...", "faceShape": "...", "eyes": "...", "distinctive": "..."}}` }
+        ]
+      }]
+    });
+    const text = data.content?.[0]?.text || '{}';
+    return JSON.parse(text.replace(/```json|```/g,'').trim());
+  } catch (e) {
+    setStatus('reg', 'خطأ: ' + e.message, 'red');
+    return { description: `طالب: ${name}`, features: {} };
+  }
+}
+
+// ---- Recognition camera ----
+async function startRecognition() {
+  if (students.length === 0) {
+    setStatus('rec', 'لا يوجد طلاب مسجلون — سجّل طلاباً أولاً', 'red');
+    return;
+  }
+  recVideoReady = false;
+  setStatus('rec', 'جاري تشغيل الكاميرا...', 'yellow');
+  document.getElementById('btn-rec-start').disabled = true;
+  try {
+    const video = document.getElementById('rec-video');
+    recStream = await startStream(video, recFacingMode);
+    recVideoReady = true;
+    isRecognizing = true;
+    document.getElementById('btn-rec-stop').disabled = false;
+    document.getElementById('btn-snap-rec').disabled = false;
+    document.getElementById('btn-flip-rec').style.display = 'inline-flex';
+    setStatus('rec', 'الكاميرا تعمل ✓ — اضغط "تحليل الآن" للتعرف', 'green');
+    recInterval = setInterval(() => { if (isRecognizing && recVideoReady) captureAndRecognize(); }, 12000);
+  } catch (e) {
+    setStatus('rec', 'خطأ في الكاميرا: ' + (e.message || 'تأكد من منح الإذن'), 'red');
+    document.getElementById('btn-rec-start').disabled = false;
+  }
+}
+
+function stopRecognition() {
+  isRecognizing = false;
+  recVideoReady = false;
+  clearInterval(recInterval);
+  if (recStream) { recStream.getTracks().forEach(t => t.stop()); recStream = null; }
+  const video = document.getElementById('rec-video');
+  video.srcObject = null;
+  clearOverlay();
+  document.getElementById('btn-rec-start').disabled = false;
+  document.getElementById('btn-rec-stop').disabled = true;
+  document.getElementById('btn-snap-rec').disabled = true;
+  document.getElementById('btn-flip-rec').style.display = 'none';
+  setStatus('rec', 'تم إيقاف التعرف', '');
+}
+
+async function flipRecCamera() {
+  recFacingMode = recFacingMode === 'user' ? 'environment' : 'user';
+  const video = document.getElementById('rec-video');
+  recVideoReady = false;
+  if (recStream) { recStream.getTracks().forEach(t => t.stop()); recStream = null; }
+  setStatus('rec', 'جاري تبديل الكاميرا...', 'yellow');
+  try {
+    recStream = await startStream(video, recFacingMode);
+    recVideoReady = true;
+    setStatus('rec', 'الكاميرا تعمل ✓', 'green');
+  } catch(e) {
+    setStatus('rec', 'خطأ في تبديل الكاميرا', 'red');
+  }
+}
+
+// ---- Capture and recognize ----
+async function captureAndRecognize() {
+  const video = document.getElementById('rec-video');
+  if (!recVideoReady || !video.srcObject || video.readyState < 2) {
+    setStatus('rec', 'الكاميرا ليست جاهزة بعد...', 'yellow');
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  const w = video.videoWidth || video.clientWidth || 640;
+  const h = video.videoHeight || video.clientHeight || 480;
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+  const imageData = canvas.toDataURL('image/jpeg', 0.85);
+  if (imageData === 'data:,') {
+    setStatus('rec', 'لم يتم التقاط الصورة — حاول مجدداً', 'yellow');
+    return;
+  }
+
+  setStatus('rec', 'جاري تحليل المشهد بالذكاء الاصطناعي...', 'yellow');
+  document.getElementById('btn-snap-rec').disabled = true;
+
+  const studentList = students.map(s =>
+    `- الاسم: "${s.name}" | ${s.sid ? 'الرقم: ' + s.sid + ' |' : ''} المميزات: ${s.descriptions?.description || 'غير محدد'}`
+  ).join('\n');
+
+  try {
+    const data = await callClaude({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 800,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "image", source: { type: "base64", media_type: "image/jpeg", data: imageData.split(',')[1] } },
+          { type: "text", text: `حلل هذه الصورة وابحث عن جميع الوجوه البشرية. قارن كل وجه مع الطلاب المسجلين:\n\n${studentList}\n\nأجب بـ JSON فقط:\n{"faces": [{"name": "اسم الطالب أو غير معروف", "confidence": 0-100, "position": "يسار أو وسط أو يمين", "x_percent": 0-100, "y_percent": 0-100, "notes": "ملاحظة قصيرة"}]}\nإذا لم تجد وجوهاً أجب: {"faces": []}` }
+        ]
+      }]
+    });
+    const text = data.content?.[0]?.text || '{"faces":[]}';
+    const result = JSON.parse(text.replace(/```json|```/g,'').trim());
+
+    drawOverlay(result.faces, video);
+    renderResults(result.faces);
+    setStatus('rec',
+      result.faces.length > 0
+        ? `✓ اكتشف ${result.faces.length} وجه — ${new Date().toLocaleTimeString('ar-SA')}`
+        : 'لم يُكتشف أي وجه — جرب الاقتراب أو تحسين الإضاءة',
+      result.faces.length > 0 ? 'green' : ''
+    );
+  } catch (e) {
+    setStatus('rec', 'خطأ في التحليل: ' + (e.message || 'تحقق من الاتصال'), 'red');
+  }
+  document.getElementById('btn-snap-rec').disabled = false;
+}
+
+// ---- Draw overlay boxes ----
+function drawOverlay(faces, video) {
+  const overlay = document.getElementById('rec-overlay');
+  const vw = video.clientWidth || 300;
+  const vh = video.clientHeight || 225;
+  overlay.width = vw;
+  overlay.height = vh;
+  const ctx = overlay.getContext('2d');
+  ctx.clearRect(0, 0, vw, vh);
+  if (!faces || faces.length === 0) return;
+
+  const posMap = { 'يسار': 0.2, 'وسط': 0.5, 'يمين': 0.8 };
+  const boxW = Math.min(vw * 0.3, 160);
+  const boxH = boxW * 1.25;
+
+  faces.forEach((face, i) => {
+    const cx = face.x_percent != null ? (face.x_percent / 100) * vw : (posMap[face.position] || (0.2 + i * 0.3)) * vw;
+    const cy = face.y_percent != null ? (face.y_percent / 100) * vh : vh * 0.45;
+    const x = Math.max(2, Math.min(vw - boxW - 2, cx - boxW / 2));
+    const y = Math.max(30, Math.min(vh - boxH - 2, cy - boxH / 2));
+    const isKnown = face.name !== 'غير معروف';
+    const color = isKnown ? '#2ecc71' : '#e74c3c';
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, boxW, boxH, 6);
+    else { ctx.rect(x, y, boxW, boxH); }
+    ctx.stroke();
+
+    const labelH = 28;
+    ctx.fillStyle = color + 'cc';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y - labelH - 2, boxW, labelH, 4);
+    else ctx.rect(x, y - labelH - 2, boxW, labelH);
+    ctx.fill();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${Math.max(11, Math.min(13, boxW / 10))}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const label = face.name + (face.confidence ? ` ${face.confidence}%` : '');
+    ctx.fillText(label, x + boxW / 2, y - labelH / 2 - 2);
+  });
+}
+
+function clearOverlay() {
+  const o = document.getElementById('rec-overlay');
+  if (o) o.getContext('2d').clearRect(0, 0, o.width, o.height);
+}
+
+// ---- Render results list ----
+function renderResults(faces) {
+  const container = document.getElementById('rec-results');
+  if (!faces || faces.length === 0) {
+    container.innerHTML = '<div class="empty-state"><i class="ti ti-mood-search"></i>لم يُكتشف أي وجه</div>';
+    return;
+  }
+  container.innerHTML = faces.map(face => {
+    const student = students.find(s => s.name === face.name);
+    const img = student?.photos?.[0];
+    const conf = face.confidence || 0;
+    const isKnown = face.name !== 'غير معروف';
+    const barColor = conf > 70 ? '#2ecc71' : conf > 40 ? '#f1c40f' : '#e74c3c';
+    return `<div class="rec-item">
+      ${img ? `<img src="${img}" alt="${face.name}">` : `<div class="avatar"><i class="ti ti-user"></i></div>`}
+      <div class="info">
+        <div class="rname">${face.name}
+          ${isKnown
+            ? `<span class="badge success">✓ معروف</span>`
+            : `<span class="badge danger">غير معروف</span>`}
+        </div>
+        <div class="conf-text">الموثوقية: ${conf}%${student?.sid ? ' | ' + student.sid : ''}${face.notes ? ' — ' + face.notes : ''}</div>
+        <div class="conf-bar"><div class="conf-fill" style="width:${conf}%;background:${barColor};"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ---- Students list ----
+function renderStudents() {
+  const grid = document.getElementById('students-grid');
+  if (students.length === 0) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="ti ti-users-group"></i>لا يوجد طلاب بعد</div>';
+    return;
+  }
+  grid.innerHTML = students.map(s => `
+    <div class="student-card">
+      <button class="del-btn" onclick="deleteStudent('${s.id}')">×</button>
+      <img src="${s.photos[0]}" alt="${s.name}">
+      <div class="sname">${s.name}</div>
+      ${s.sid ? `<div style="font-size:11px;color:#888;margin-top:2px;">${s.sid}</div>` : ''}
+      <div style="font-size:11px;color:#aaa;margin-top:4px;">${s.photos.length} صور</div>
+    </div>
+  `).join('');
+}
+
+function deleteStudent(id) {
+  if (!confirm('حذف هذا الطالب؟')) return;
+  students = students.filter(s => s.id !== id);
+  saveToStorage(); renderStudents();
+  document.getElementById('count-badge').textContent = students.length;
+}
+
+function clearAll() {
+  if (students.length === 0) return;
+  if (!confirm('حذف جميع الطلاب؟')) return;
+  students = []; saveToStorage(); renderStudents();
+  document.getElementById('count-badge').textContent = 0;
+}
+
+// ---- Storage ----
+function saveToStorage() {
+  try { localStorage.setItem('face_rec_v2', JSON.stringify(students)); } catch(e) {}
+}
+function loadFromStorage() {
+  try {
+    const d = localStorage.getItem('face_rec_v2');
+    if (d) { students = JSON.parse(d); renderStudents(); document.getElementById('count-badge').textContent = students.length; }
+  } catch(e) {}
+}
+
+// ---- Status ----
+function setStatus(mode, msg, dotClass) {
+  const el = document.getElementById(mode + '-status');
+  if (el) el.textContent = msg;
+  const dot = document.getElementById(mode + '-dot');
+  if (dot) dot.className = 'dot' + (dotClass ? ' ' + dotClass : '');
+}
+
+// ---- Init ----
+document.getElementById('inp-name').addEventListener('input', updateSaveBtn);
+loadApiKey();
+loadFromStorage();
+</script>
+</body>
+</html>
