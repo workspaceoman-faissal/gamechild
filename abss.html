@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>نظام الحضور والغياب المدرسي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--bg2:#161b27;--bg3:#1e2535;--bg4:#252d3d;
+  --border:#2a3347;--border2:#3a4560;
+  --accent:#3b82f6;--accent2:#60a5fa;--accent-glow:rgba(59,130,246,.25);
+  --green:#22c55e;--green-bg:rgba(34,197,94,.12);
+  --red:#ef4444;--red-bg:rgba(239,68,68,.12);
+  --yellow:#f59e0b;--yellow-bg:rgba(245,158,11,.12);
+  --purple:#a855f7;--purple-bg:rgba(168,85,247,.12);
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;
+  --radius:12px;--radius-sm:8px;--radius-lg:16px;
+  --shadow:0 4px 24px rgba(0,0,0,.4);
+  --font:'IBM Plex Sans Arabic',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--text);direction:rtl;font-size:14px}
+
+/* ── LAYOUT ── */
+.shell{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:220px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:transform .3s}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.25rem;gap:12px;flex-shrink:0}
+.content{flex:1;overflow-y:auto;padding:1.25rem;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+
+/* ── SIDEBAR ── */
+.logo{padding:1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),#7c3aed);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.logo-text{font-size:13px;font-weight:600;line-height:1.3}
+.logo-sub{font-size:10px;color:var(--text3);font-weight:400}
+nav{flex:1;padding:.75rem .5rem;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;border:none;background:none;width:100%;text-align:right}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--accent-glow);color:var(--accent);border:1px solid rgba(59,130,246,.3)}
+.nav-item .ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:var(--bg3)}
+.nav-item.active .ico{background:var(--accent-glow)}
+.nav-sep{height:1px;background:var(--border);margin:.5rem 0}
+.sidebar-footer{padding:.75rem;border-top:1px solid var(--border)}
+.model-pill{padding:6px 10px;border-radius:6px;font-size:11px;display:flex;align-items:center;gap:6px;color:var(--text3)}
+.model-dot{width:6px;height:6px;border-radius:50%;background:#ccc;flex-shrink:0}
+.model-dot.loaded{background:var(--green);animation:glow 2s infinite}
+@keyframes glow{0%,100%{box-shadow:0 0 4px var(--green)}50%{box-shadow:0 0 10px var(--green)}}
+
+/* ── TOP BAR ── */
+.menu-btn{width:36px;height:36px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:18px;color:var(--text2)}
+.topbar-title{font-size:15px;font-weight:600;flex:1}
+.topbar-date{font-size:12px;color:var(--text3);white-space:nowrap}
+
+/* ── PAGES ── */
+.page{display:none}.page.active{display:block}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
+.card-title{font-size:14px;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:8px;color:var(--text)}
+
+/* ── STATS ROW ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.25rem}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.stat-card.blue::before{background:var(--accent)}
+.stat-card.green::before{background:var(--green)}
+.stat-card.red::before{background:var(--red)}
+.stat-card.yellow::before{background:var(--yellow)}
+.stat-num{font-size:28px;font-weight:700;line-height:1;margin-bottom:4px}
+.stat-num.blue{color:var(--accent)}
+.stat-num.green{color:var(--green)}
+.stat-num.red{color:var(--red)}
+.stat-num.yellow{color:var(--yellow)}
+.stat-lbl{font-size:12px;color:var(--text3)}
+.stat-icon{position:absolute;top:1rem;left:1rem;font-size:22px;opacity:.3}
+
+/* ── FORM ELEMENTS ── */
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:12px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;color:var(--text3);font-weight:500}
+.field input,.field select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:var(--radius-sm);font-size:13px;font-family:var(--font);outline:none;transition:border .15s;width:100%}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field select option{background:var(--bg3)}
+
+/* ── BUTTONS ── */
+.btn{padding:9px 16px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--font);display:inline-flex;align-items:center;gap:7px;transition:all .15s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.4;pointer-events:none}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent2);box-shadow:0 0 16px var(--accent-glow)}
+.btn-green{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.btn-green:hover{background:var(--green);color:#fff}
+.btn-red{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.btn-red:hover{background:var(--red);color:#fff}
+.btn-yellow{background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(245,158,11,.3)}
+.btn-ghost{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text)}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.btn-danger:hover{background:var(--red);color:#fff}
+.big-btn{width:100%;padding:13px;font-size:14px;font-weight:600;border-radius:var(--radius);margin-top:10px;justify-content:center}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-present{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.badge-absent{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.badge-late{background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(245,158,11,.3)}
+.badge-unknown{background:var(--bg3);color:var(--text3);border:1px solid var(--border)}
+
+/* ── STUDENT LIST ── */
+.att-list{display:flex;flex-direction:column;gap:6px;margin-top:1rem}
+.att-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);transition:all .2s}
+.att-row.present{border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.06)}
+.att-row.absent{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.06)}
+.att-row.late{border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.06)}
+.att-avatar{width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--border)}
+.att-avatar-ph{width:38px;height:38px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:2px solid var(--border)}
+.att-info{flex:1;min-width:0}
+.att-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.att-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.att-actions{display:flex;gap:5px;flex-shrink:0}
+.att-btn{width:32px;height:32px;border-radius:8px;border:1px solid;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;background:transparent;font-family:var(--font)}
+.att-btn-p{border-color:rgba(34,197,94,.4);color:var(--green)}
+.att-btn-p.on,.att-btn-p:hover{background:var(--green);border-color:var(--green);color:#fff}
+.att-btn-a{border-color:rgba(239,68,68,.4);color:var(--red)}
+.att-btn-a.on,.att-btn-a:hover{background:var(--red);border-color:var(--red);color:#fff}
+.att-btn-l{border-color:rgba(245,158,11,.4);color:var(--yellow)}
+.att-btn-l.on,.att-btn-l:hover{background:var(--yellow);border-color:var(--yellow);color:#fff}
+
+/* ── VIDEO ── */
+.video-wrap{position:relative;border-radius:var(--radius-lg);overflow:hidden;background:#000;width:100%}
+.video-wrap video{width:100%;height:auto;display:block;min-height:200px}
+canvas.ov{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.cam-bar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.status-bar{margin-top:8px;padding:9px 14px;border-radius:var(--radius-sm);background:var(--bg3);border:1px solid var(--border);font-size:13px;color:var(--text2);display:flex;align-items:center;gap:8px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.dot.g{background:var(--green)}.dot.r{background:var(--red)}.dot.y{background:var(--yellow);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--bg3);padding:10px 12px;text-align:right;font-weight:600;font-size:12px;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text)}
+tbody tr:hover td{background:var(--bg3)}
+tbody tr:last-child td{border-bottom:none}
+
+/* ── PROGRESS ── */
+.prog-wrap{background:var(--bg3);border-radius:20px;height:6px;overflow:hidden}
+.prog-fill{height:100%;border-radius:20px;transition:width .5s}
+
+/* ── NOTICE ── */
+.notice{padding:10px 14px;border-radius:var(--radius-sm);font-size:12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:1rem}
+.notice.info{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:var(--accent2)}
+.notice.warn{background:var(--yellow-bg);border:1px solid rgba(245,158,11,.3);color:var(--yellow)}
+.notice.success{background:var(--green-bg);border:1px solid rgba(34,197,94,.3);color:var(--green)}
+.notice.err{background:var(--red-bg);border:1px solid rgba(239,68,68,.3);color:var(--red)}
+.model-progress{background:var(--bg3);height:4px;border-radius:3px;overflow:hidden;margin-top:6px}
+.model-progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .4s}
+
+/* ── ANALYSIS CARDS ── */
+.analysis-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:1rem}
+.ana-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:12px}
+.ana-avatar{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0}
+.ana-ph{width:46px;height:46px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.ana-info{flex:1;min-width:0}
+.ana-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ana-rate{font-size:11px;margin-top:3px}
+.ana-bar{margin-top:5px}
+.ana-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-block;margin-top:4px}
+.ana-tag.good{background:var(--green-bg);color:var(--green)}
+.ana-tag.warn{background:var(--yellow-bg);color:var(--yellow)}
+.ana-tag.danger{background:var(--red-bg);color:var(--red)}
+
+/* ── SNAPS ── */
+.snaps{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.snaps img{width:64px;height:64px;border-radius:8px;object-fit:cover;border:2px solid var(--border)}
+
+/* ── STUDENT CARDS ── */
+.std-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:1rem}
+.std-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;position:relative}
+.std-card img{width:58px;height:58px;border-radius:50%;object-fit:cover;border:2px solid var(--border);margin:0 auto 8px;display:block}
+.std-card .ph{width:58px;height:58px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 8px}
+.std-card .nm{font-size:12px;font-weight:600;word-break:break-word;color:var(--text)}
+.std-card .mt{font-size:10px;color:var(--text3);margin-top:3px}
+.std-del{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:var(--red-bg);color:var(--red);border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;padding:0}
+
+/* ── TABS ── */
+.inner-tabs{display:flex;gap:4px;background:var(--bg3);border-radius:var(--radius-sm);padding:3px;margin-bottom:1rem}
+.inner-tab{flex:1;padding:7px;text-align:center;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text3);transition:all .15s;border:none;background:none;font-family:var(--font)}
+.inner-tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:3rem 1rem;color:var(--text3)}
+.empty-icon{font-size:40px;margin-bottom:10px;opacity:.4;display:block}
+
+/* ── MOBILE ── */
+@media(max-width:680px){
+  .sidebar{position:fixed;top:0;right:0;bottom:0;z-index:100;transform:translateX(100%)}
+  .sidebar.open{transform:translateX(0)}
+  .menu-btn{display:flex}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .form-row{grid-template-columns:1fr 1fr}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
+  .sidebar-overlay.show{display:block}
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🏫</div>
+      <div>
+        <div class="logo-text">نظام الحضور</div>
+        <div class="logo-sub">المدرسي الذكي</div>
+      </div>
+    </div>
+    <nav>
+      <button class="nav-item active" onclick="showPage('dashboard')">
+        <div class="ico">📊</div> لوحة التحكم
+      </button>
+      <button class="nav-item" onclick="showPage('attendance')">
+        <div class="ico">✅</div> تسجيل الحضور
+      </button>
+      <button class="nav-item" onclick="showPage('register')">
+        <div class="ico">📸</div> تسجيل الطلاب
+      </button>
+      <div class="nav-sep"></div>
+      <button class="nav-item" onclick="showPage('manage')">
+        <div class="ico">📋</div> إدارة الغياب
+      </button>
+      <button class="nav-item" onclick="showPage('analysis')">
+        <div class="ico">📈</div> تحليل الغياب
+      </button>
+      <div class="nav-sep"></div>
+      <button class="nav-item" onclick="showPage('students')">
+        <div class="ico">👥</div> قائمة الطلاب
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="model-pill">
+        <div class="model-dot" id="model-dot"></div>
+        <span id="model-txt">تحميل النماذج...</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <button class="menu-btn" id="menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-title" id="page-title">لوحة التحكم</div>
+      <div class="topbar-date" id="top-date"></div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══════════════════════════════════
+           PAGE: DASHBOARD
+      ══════════════════════════════════ -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-row">
+          <div class="stat-card blue">
+            <div class="stat-icon">👨‍🎓</div>
+            <div class="stat-num blue" id="ds-students">0</div>
+            <div class="stat-lbl">إجمالي الطلاب</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon">✅</div>
+            <div class="stat-num green" id="ds-present">0</div>
+            <div class="stat-lbl">حاضر اليوم</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-icon">❌</div>
+            <div class="stat-num red" id="ds-absent">0</div>
+            <div class="stat-lbl">غائب اليوم</div>
+          </div>
+          <div class="stat-card yellow">
+            <div class="stat-icon">⏰</div>
+            <div class="stat-num yellow" id="ds-late">0</div>
+            <div class="stat-lbl">متأخر اليوم</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="card">
+            <div class="card-title">📅 إجراء سريع</div>
+            <div class="form-row">
+              <div class="field">
+                <label>التاريخ</label>
+                <input type="date" id="dash-date">
+              </div>
+              <div class="field">
+                <label>الصف</label>
+                <select id="dash-grade" onchange="updateDashSection()">
+                  <option value="">-- اختر --</option>
+                  <option>الخامس</option><option>السادس</option><option>السابع</option>
+                  <option>الثامن</option><option>التاسع</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>الشعبة</label>
+                <select id="dash-section" onchange="updateDashSection()">
+                  <option value="">-- اختر --</option>
+                  <option>1</option><option>2</option><option>3</option><option>4</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary" onclick="goToAttendance()">✅ تسجيل الحضور</button>
+              <button class="btn btn-ghost" onclick="showPage('manage')">📋 إدارة الغياب</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📊 نسبة الحضور اليوم</div>
+            <div style="text-align:center;padding:1rem 0">
+              <div style="font-size:42px;font-weight:700;color:var(--accent)" id="ds-pct">—</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:4px">نسبة الحضور الكلية</div>
+              <div class="prog-wrap" style="margin-top:12px">
+                <div class="prog-fill" id="ds-bar" style="width:0%;background:var(--accent)"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div class="card-title">🕐 آخر جلسات الحضور</div>
+          <div id="dash-sessions"><div class="empty"><span class="empty-icon">📭</span>لا توجد جلسات بعد</div></div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           PAGE: ATTENDANCE
+      ══════════════════════════════════ -->
+      <div class="page" id="page-attendance">
+        <div class="inner-tabs">
+          <button class="inner-tab active" onclick="attTab('auto')">🤖 تلقائي (كاميرا)</button>
+          <button class="inner-tab" onclick="attTab('manual')">✍️ يدوي</button>
+        </div>
+
+        <!-- Session selector -->
+        <div class="card" style="margin-bottom:12px">
+          <div class="form-row">
+            <div class="field"><label>التاريخ</label><input type="date" id="att-date"></div>
+            <div class="field"><label>الصف</label>
+              <select id="att-grade" onchange="loadAttStudents()">
+                <option value="">-- اختر الصف --</option>
+                <option>الخامس</option><option>السادس</option><option>السابع</option>
+                <option>الثامن</option><option>التاسع</option>
+              </select>
+            </div>
+            <div class="field"><label>الشعبة</label>
+              <select id="att-section" onchange="loadAttStudents()">
+                <option value="">-- اختر الشعبة --</option>
+                <option>1</option><option>2</option><option>3</option><option>4</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-green" onclick="markAll('present')">✅ تحضير الكل</button>
+            <button class="btn btn-red" onclick="markAll('absent')">❌ غياب الكل</button>
+            <button class="btn btn-yellow" onclick="markAll('late')">⏰ تأخر الكل</button>
+            <button class="btn btn-primary" onclick="saveSession()" style="margin-right:auto">💾 حفظ الكشف</button>
+          </div>
+        </div>
+
+        <!-- AUTO tab -->
+        <div id="att-auto">
+          <div class="card" style="margin-bottom:12px">
+            <div class="card-title">📷 التعرف التلقائي على الوجوه</div>
+            <div class="video-wrap">
+              <video id="att-vid" autoplay playsinline muted webkit-playsinline></video>
+              <canvas id="att-ov" class="ov"></canvas>
+            </div>
+            <div class="cam-bar">
+              <button class="btn btn-primary" onclick="startAttCam()" id="btn-att-start">▶ تشغيل الكاميرا</button>
+              <button class="btn btn-danger" onclick="stopAttCam()" id="btn-att-stop" disabled>✕ إيقاف</button>
+              <button class="btn btn-ghost" onclick="flipCam()" id="btn-att-flip" style="display:none">🔄 قلب</button>
+              <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer;margin-right:auto">
+                <input type="checkbox" id="auto-check" checked> تعرف تلقائي
+              </label>
+            </div>
+            <div class="status-bar"><div class="dot" id="att-dot"></div><span id="att-st">اختر الصف والشعبة ثم شغّل الكاميرا</span></div>
+          </div>
+        </div>
+
+        <!-- MANUAL tab -->
+        <div id="att-manual" style="display:none"></div>
+
+        <!-- Students list -->
+        <div class="att-list" id="att-list">
+          <div class="empty"><span class="empty-icon">👆</span>اختر الصف والشعبة أولاً</div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           PAGE: REGISTER STUDENT
+      ══════════════════════════════════ -->
+      <div class="page" id="page-register">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div class="card" style="margin-bottom:12px">
+              <div class="card-title">📷 كاميرا التسجيل</div>
+              <div class="video-wrap">
+                <video id="reg-vid" autoplay playsinline muted webkit-playsinline></video>
+              </div>
+              <div class="cam-bar">
+                <button class="btn btn-primary" onclick="startRegCam()" id="btn-rs">▶ تشغيل</button>
+                <button class="btn btn-danger" onclick="stopRegCam()" id="btn-rstop" disabled>✕ إيقاف</button>
+                <button class="btn btn-ghost" onclick="flipRegCam()" id="btn-rflip" style="display:none">🔄 قلب</button>
+              </div>
+              <button class="btn btn-green big-btn" onclick="capturePhoto()" id="btn-cap" disabled>📷 التقاط صورة</button>
+              <div class="status-bar"><div class="dot" id="rd"></div><span id="rs">اضغط "تشغيل"</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">📋 بيانات الطالب</div>
+            <div class="field" style="margin-bottom:10px"><label>الاسم الكامل *</label><input id="inp-name" type="text" placeholder="اسم الطالب" autocomplete="off"></div>
+            <div class="field" style="margin-bottom:10px"><label>الرقم الدراسي</label><input id="inp-sid" type="text" placeholder="مثال: 2024001" autocomplete="off"></div>
+            <div class="field" style="margin-bottom:10px">
+              <label>الصف *</label>
+              <select id="inp-grade">
+                <option value="">-- اختر الصف --</option>
+                <option>الخامس</option><option>السادس</option><option>السابع</option>
+                <option>الثامن</option><option>التاسع</option>
+              </select>
+            </div>
+            <div class="field" style="margin-bottom:10px">
+              <label>الشعبة *</label>
+              <select id="inp-section">
+                <option value="">-- اختر --</option>
+                <option>1</option><option>2</option><option>3</option><option>4</option>
+              </select>
+            </div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:6px">الصور الملتقطة (3 صور من زوايا مختلفة):</div>
+            <div class="snaps" id="snaps"><span style="font-size:12px;color:var(--text3)">لا توجد صور بعد</span></div>
+            <div id="snap-cnt" style="font-size:12px;color:var(--green);margin-top:6px"></div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+              <button class="btn btn-primary" onclick="saveStudent()" id="btn-save" disabled>💾 حفظ الطالب</button>
+              <button class="btn btn-danger" onclick="clearSnaps()">🗑 مسح</button>
+            </div>
+          </div>
+        </div>
+        <div class="notice info" style="margin-top:12px">
+          💡 التقط 3 صور على الأقل من زوايا مختلفة (أمام، يمين، يسار) لأفضل دقة تعرف
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           PAGE: MANAGE ABSENCES
+      ══════════════════════════════════ -->
+      <div class="page" id="page-manage">
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-title">🔍 بحث في سجلات الغياب</div>
+          <div class="form-row">
+            <div class="field"><label>من تاريخ</label><input type="date" id="mng-from"></div>
+            <div class="field"><label>إلى تاريخ</label><input type="date" id="mng-to"></div>
+            <div class="field"><label>الصف</label>
+              <select id="mng-grade">
+                <option value="">الكل</option>
+                <option>الخامس</option><option>السادس</option><option>السابع</option>
+                <option>الثامن</option><option>التاسع</option>
+              </select>
+            </div>
+            <div class="field"><label>الشعبة</label>
+              <select id="mng-section">
+                <option value="">الكل</option>
+                <option>1</option><option>2</option><option>3</option><option>4</option>
+              </select>
+            </div>
+            <div class="field"><label>اسم الطالب</label><input id="mng-name" type="text" placeholder="بحث..."></div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="runSearch()">🔍 بحث</button>
+            <button class="btn btn-ghost" onclick="clearSearch()">✕ مسح</button>
+            <button class="btn btn-green" onclick="exportCSV()" style="margin-right:auto">📤 تصدير CSV</button>
+          </div>
+        </div>
+        <div id="mng-results"><div class="empty"><span class="empty-icon">🔍</span>اضغط بحث لعرض النتائج</div></div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           PAGE: ANALYSIS
+      ══════════════════════════════════ -->
+      <div class="page" id="page-analysis">
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-title">📈 تحليل الغياب</div>
+          <div class="form-row">
+            <div class="field"><label>الصف</label>
+              <select id="ana-grade" onchange="runAnalysis()">
+                <option value="">-- اختر الصف --</option>
+                <option>الخامس</option><option>السادس</option><option>السابع</option>
+                <option>الثامن</option><option>التاسع</option>
+              </select>
+            </div>
+            <div class="field"><label>الشعبة</label>
+              <select id="ana-section" onchange="runAnalysis()">
+                <option value="">الكل</option>
+                <option>1</option><option>2</option><option>3</option><option>4</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">
+          <div class="stat-card green"><div class="stat-icon">😊</div><div class="stat-num green" id="ana-good">0</div><div class="stat-lbl">حضور منتظم</div></div>
+          <div class="stat-card yellow"><div class="stat-icon">⚠️</div><div class="stat-num yellow" id="ana-warn">0</div><div class="stat-lbl">كثير الغياب</div></div>
+          <div class="stat-card red"><div class="stat-icon">🚫</div><div class="stat-num red" id="ana-danger">0</div><div class="stat-lbl">منقطع</div></div>
+        </div>
+        <div id="ana-results"><div class="empty"><span class="empty-icon">📊</span>اختر الصف لعرض التحليل</div></div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           PAGE: STUDENTS LIST
+      ══════════════════════════════════ -->
+      <div class="page" id="page-students">
+        <div class="card" style="margin-bottom:12px">
+          <div class="form-row">
+            <div class="field"><label>فلتر الصف</label>
+              <select id="std-grade" onchange="renderStudents()">
+                <option value="">الكل</option>
+                <option>الخامس</option><option>السادس</option><option>السابع</option>
+                <option>الثامن</option><option>التاسع</option>
+              </select>
+            </div>
+            <div class="field"><label>فلتر الشعبة</label>
+              <select id="std-section" onchange="renderStudents()">
+                <option value="">الكل</option>
+                <option>1</option><option>2</option><option>3</option><option>4</option>
+              </select>
+            </div>
+            <div class="field" style="justify-content:flex-end;flex-direction:row;align-items:flex-end;gap:8px">
+              <button class="btn btn-ghost" onclick="importStudents()">📥 استيراد أسماء</button>
+              <button class="btn btn-danger" onclick="clearAllStudents()">🗑 مسح الكل</button>
+            </div>
+          </div>
+        </div>
+        <div class="std-grid" id="students-grid">
+          <div class="empty" style="grid-column:1/-1"><span class="empty-icon">👥</span>لا يوجد طلاب بعد</div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- MODEL NOTICE -->
+<div id="model-notice" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);z-index:200;width:min(400px,90vw)">
+  <div class="notice info" style="margin:0">
+    <div style="flex:1">
+      ⏳ جاري تحميل نماذج الذكاء الاصطناعي...
+      <div class="model-progress"><div class="model-progress-fill" id="mpf" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let modelsLoaded=false;
+let students=[];  // {id,name,sid,grade,section,photos:[],descriptors:[]}
+let sessions=[];  // {id,date,grade,section,records:{sid:{status,time}}}
+let attState={};  // sid -> {status:'present'|'absent'|'late'}
+let attGrade='',attSection='';
+
+let regStream=null,attStream=null,regFacing='user',attFacing='environment';
+let regReady=false,attReady=false;
+let snaps=[],detLoop=null;
+
+const MODEL_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.14/model';
+const PAGES={'dashboard':'لوحة التحكم','attendance':'تسجيل الحضور','register':'تسجيل الطلاب','manage':'إدارة الغياب','analysis':'تحليل الغياب','students':'قائمة الطلاب'};
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+document.getElementById('top-date').textContent=new Date().toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+const today=new Date().toISOString().split('T')[0];
+['att-date','dash-date','mng-from','mng-to'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
+
+document.getElementById('inp-name').addEventListener('input',updateSaveBtn);
+loadStorage();
+updateDashboard();
+loadModels();
+
+// ═══════════════════════════════════════════════════════
+//  MODELS
+// ═══════════════════════════════════════════════════════
+async function loadModels(){
+  const mpf=document.getElementById('mpf');
+  try{
+    mpf.style.width='20%';
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    mpf.style.width='55%';
+    await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
+    mpf.style.width='85%';
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    mpf.style.width='100%';
+    modelsLoaded=true;
+    document.getElementById('model-dot').className='model-dot loaded';
+    document.getElementById('model-txt').textContent='النماذج جاهزة ✓';
+    const n=document.getElementById('model-notice');
+    n.querySelector('.notice').className='notice success';
+    n.querySelector('.notice').innerHTML='✅ نماذج الذكاء الاصطناعي جاهزة';
+    setTimeout(()=>n.style.display='none',2500);
+  }catch(e){
+    document.getElementById('model-txt').textContent='خطأ في التحميل';
+    const n=document.getElementById('model-notice');
+    n.querySelector('.notice').className='notice err';
+    n.querySelector('.notice').innerHTML='❌ خطأ في تحميل النماذج — تأكد من الاتصال بالإنترنت';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════
+function showPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach((b,i)=>{
+    b.classList.toggle('active',Object.keys(PAGES)[i]===page);
+  });
+  document.getElementById('page-title').textContent=PAGES[page]||'';
+  closeSidebar();
+  if(page==='dashboard') updateDashboard();
+  if(page==='students') renderStudents();
+  if(page==='analysis') runAnalysis();
+}
+
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function attTab(t){
+  document.querySelectorAll('.inner-tab').forEach((b,i)=>b.classList.toggle('active',['auto','manual'][i]===t));
+  document.getElementById('att-auto').style.display=t==='auto'?'block':'none';
+  document.getElementById('att-manual').style.display=t==='manual'?'block':'none';
+}
+
+// ═══════════════════════════════════════════════════════
+//  CAMERA HELPER
+// ═══════════════════════════════════════════════════════
+async function startStream(vid,facing){
+  if(vid.srcObject){try{vid.srcObject.getTracks().forEach(t=>t.stop());}catch(e){} vid.srcObject=null;}
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1280},height:{ideal:720}}});}
+  catch(e){try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing}});}
+  catch(e2){stream=await navigator.mediaDevices.getUserMedia({video:true});}}
+  vid.srcObject=stream; vid.muted=true;
+  vid.setAttribute('playsinline',''); vid.setAttribute('webkit-playsinline','');
+  await new Promise(res=>{
+    if(vid.readyState>=2){vid.play().catch(()=>{});res();return;}
+    let done=false;
+    const fin=()=>{if(done)return;done=true;vid.play().catch(()=>{});res();};
+    vid.onloadeddata=fin; vid.oncanplay=fin;
+    vid.onloadedmetadata=()=>setTimeout(fin,300);
+    setTimeout(fin,6000);
+  });
+  await new Promise(r=>setTimeout(r,500));
+  return stream;
+}
+
+// ═══════════════════════════════════════════════════════
+//  REGISTRATION CAMERA
+// ═══════════════════════════════════════════════════════
+async function startRegCam(){
+  if(!modelsLoaded){setSt('r','النماذج تُحمَّل...','y');return;}
+  setSt('r','جاري تشغيل الكاميرا...','y');
+  document.getElementById('btn-rs').disabled=true;
+  try{
+    regStream=await startStream(document.getElementById('reg-vid'),regFacing);
+    regReady=true;
+    setSt('r','الكاميرا تعمل ✓ — التقط 3 صور من زوايا مختلفة','g');
+    document.getElementById('btn-cap').disabled=false;
+    document.getElementById('btn-rstop').disabled=false;
+    document.getElementById('btn-rflip').style.display='inline-flex';
+  }catch(e){setSt('r','خطأ: '+(e.message||'تعذر الوصول للكاميرا'),'r');document.getElementById('btn-rs').disabled=false;}
+}
+function stopRegCam(){
+  if(regStream){regStream.getTracks().forEach(t=>t.stop());regStream=null;}
+  document.getElementById('reg-vid').srcObject=null; regReady=false;
+  document.getElementById('btn-cap').disabled=true;
+  document.getElementById('btn-rstop').disabled=true;
+  document.getElementById('btn-rs').disabled=false;
+  document.getElementById('btn-rflip').style.display='none';
+  setSt('r','تم الإيقاف','');
+}
+async function flipRegCam(){regFacing=regFacing==='user'?'environment':'user';stopRegCam();await startRegCam();}
+
+function capturePhoto(){
+  const vid=document.getElementById('reg-vid');
+  if(!regReady||!vid.srcObject||vid.readyState<2){setSt('r','الكاميرا غير جاهزة','r');return;}
+  const c=document.createElement('canvas');
+  const w=vid.videoWidth||640,h=vid.videoHeight||480;
+  c.width=w;c.height=h;
+  const ctx=c.getContext('2d');
+  if(regFacing==='user'){ctx.translate(w,0);ctx.scale(-1,1);}
+  ctx.drawImage(vid,0,0,w,h);
+  const url=c.toDataURL('image/jpeg',.85);
+  if(url==='data:,'){setSt('r','انتظر لحظة وأعد المحاولة','y');return;}
+  snaps.push(url);
+  renderSnaps();
+  setSt('r',`✓ ${snaps.length} صورة ملتقطة${snaps.length<3?' — التقط المزيد':' ✓ جاهز'}`,snaps.length>=3?'g':'y');
+  updateSaveBtn();
+}
+function renderSnaps(){
+  const c=document.getElementById('snaps');
+  if(!snaps.length){c.innerHTML='<span style="font-size:12px;color:var(--text3)">لا توجد صور بعد</span>';document.getElementById('snap-cnt').textContent='';return;}
+  c.innerHTML=snaps.map((p,i)=>`<img src="${p}" alt="صورة ${i+1}">`).join('');
+  document.getElementById('snap-cnt').textContent=snaps.length>=3?`✅ ${snaps.length} صور — ممتاز!`:`${snaps.length}/3 صور`;
+}
+function clearSnaps(){snaps=[];renderSnaps();updateSaveBtn();}
+function updateSaveBtn(){
+  const n=document.getElementById('inp-name').value.trim();
+  const g=document.getElementById('inp-grade').value;
+  const s=document.getElementById('inp-section').value;
+  document.getElementById('btn-save').disabled=!(n&&g&&s&&snaps.length>=1);
+}
+
+async function saveStudent(){
+  const name=document.getElementById('inp-name').value.trim();
+  const sid=document.getElementById('inp-sid').value.trim();
+  const grade=document.getElementById('inp-grade').value;
+  const section=document.getElementById('inp-section').value;
+  if(!name||!grade||!section){setSt('r','أكمل البيانات المطلوبة *','r');return;}
+  setSt('r','جاري استخراج بصمة الوجه...','y');
+  document.getElementById('btn-save').disabled=true;
+  const descriptors=[];
+  for(const snap of snaps){
+    try{
+      const img=await loadImg(snap);
+      const det=await faceapi.detectSingleFace(img,new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks(true).withFaceDescriptor();
+      if(det)descriptors.push(Array.from(det.descriptor));
+    }catch(e){}
+  }
+  if(!descriptors.length&&snaps.length>0){setSt('r','لم يُكتشف وجه — تأكد من وضوح الصورة والإضاءة','r');document.getElementById('btn-save').disabled=false;return;}
+  const student={id:Date.now().toString(),name,sid,grade,section,photos:snaps.length?[snaps[0]]:[],descriptors,addedAt:new Date().toISOString()};
+  students.push(student);
+  saveStorage();renderStudents();
+  setSt('r',`✅ تم حفظ "${name}" — ${descriptors.length} بصمة وجه`,'g');
+  document.getElementById('inp-name').value='';document.getElementById('inp-sid').value='';
+  document.getElementById('inp-grade').value='';document.getElementById('inp-section').value='';
+  snaps=[];renderSnaps();
+  document.getElementById('btn-save').disabled=true;
+  updateDashboard();
+}
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
+
+// ═══════════════════════════════════════════════════════
+//  ATTENDANCE
+// ═══════════════════════════════════════════════════════
+function loadAttStudents(){
+  const grade=document.getElementById('att-grade').value;
+  const section=document.getElementById('att-section').value;
+  attGrade=grade; attSection=section;
+  if(!grade||!section){document.getElementById('att-list').innerHTML='<div class="empty"><span class="empty-icon">👆</span>اختر الصف والشعبة أولاً</div>';return;}
+  const cls=students.filter(s=>s.grade===grade&&s.section===section);
+  // Check if existing session
+  const date=document.getElementById('att-date').value;
+  const existing=sessions.find(s=>s.date===date&&s.grade===grade&&s.section===section);
+  attState={};
+  if(existing){cls.forEach(s=>{attState[s.id]=existing.records?.[s.id]||{status:'unknown'};});}
+  else{cls.forEach(s=>{attState[s.id]={status:'unknown'};});}
+  renderAttList();
+}
+
+function renderAttList(){
+  const grade=document.getElementById('att-grade').value;
+  const section=document.getElementById('att-section').value;
+  if(!grade||!section){document.getElementById('att-list').innerHTML='<div class="empty"><span class="empty-icon">👆</span>اختر الصف والشعبة أولاً</div>';return;}
+  const cls=students.filter(s=>s.grade===grade&&s.section===section);
+  if(!cls.length){document.getElementById('att-list').innerHTML='<div class="empty"><span class="empty-icon">👥</span>لا يوجد طلاب في هذا الصف — <a href="#" onclick="showPage(\'register\')" style="color:var(--accent)">سجّل طلاباً</a></div>';return;}
+  document.getElementById('att-list').innerHTML=cls.map(s=>{
+    const rec=attState[s.id]||{status:'unknown'};
+    const st=rec.status;
+    return`<div class="att-row ${st==='unknown'?'':st}" id="arow-${s.id}">
+      ${s.photos?.[0]?`<img class="att-avatar" src="${s.photos[0]}" alt="${s.name}">`:`<div class="att-avatar-ph">👤</div>`}
+      <div class="att-info">
+        <div class="att-name">${s.name}</div>
+        <div class="att-meta">${s.sid?s.sid+' · ':''} ${s.grade} - ${s.section}${rec.time?' · '+rec.time:''}</div>
+      </div>
+      <div class="att-actions">
+        <button class="att-btn att-btn-p ${st==='present'?'on':''}" onclick="setAtt('${s.id}','present')" title="حاضر">✓</button>
+        <button class="att-btn att-btn-a ${st==='absent'?'on':''}" onclick="setAtt('${s.id}','absent')" title="غائب">✗</button>
+        <button class="att-btn att-btn-l ${st==='late'?'on':''}" onclick="setAtt('${s.id}','late')" title="متأخر">⏰</button>
+      </div>
+      <span class="badge ${st==='present'?'badge-present':st==='absent'?'badge-absent':st==='late'?'badge-late':'badge-unknown'}" id="abadge-${s.id}">
+        ${st==='present'?'حاضر':st==='absent'?'غائب':st==='late'?'متأخر':'—'}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+function setAtt(sid,status){
+  const now=new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
+  attState[sid]={status,time:now};
+  const row=document.getElementById('arow-'+sid);
+  if(row){
+    row.className='att-row '+status;
+    row.querySelectorAll('.att-btn').forEach(b=>{
+      const isP=b.classList.contains('att-btn-p'),isA=b.classList.contains('att-btn-a'),isL=b.classList.contains('att-btn-l');
+      b.classList.toggle('on',(isP&&status==='present')||(isA&&status==='absent')||(isL&&status==='late'));
+    });
+    const badge=document.getElementById('abadge-'+sid);
+    if(badge){
+      badge.className='badge '+(status==='present'?'badge-present':status==='absent'?'badge-absent':status==='late'?'badge-late':'badge-unknown');
+      badge.textContent=status==='present'?'حاضر':status==='absent'?'غائب':status==='late'?'متأخر':'—';
+    }
+  }
+  updateDashStats();
+}
+
+function markAll(status){
+  const grade=document.getElementById('att-grade').value;
+  const section=document.getElementById('att-section').value;
+  if(!grade||!section) return;
+  const now=new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
+  students.filter(s=>s.grade===grade&&s.section===section).forEach(s=>{attState[s.id]={status,time:now};});
+  renderAttList();updateDashStats();
+}
+
+function saveSession(){
+  const grade=document.getElementById('att-grade').value;
+  const section=document.getElementById('att-section').value;
+  const date=document.getElementById('att-date').value;
+  if(!grade||!section||!date){alert('اختر الصف والشعبة والتاريخ');return;}
+  const existing=sessions.findIndex(s=>s.date===date&&s.grade===grade&&s.section===section);
+  const sess={id:existing>=0?sessions[existing].id:Date.now().toString(),date,grade,section,records:{...attState},savedAt:new Date().toISOString()};
+  if(existing>=0)sessions[existing]=sess; else sessions.push(sess);
+  saveStorage();updateDashboard();
+  showNotice('✅ تم حفظ الكشف بنجاح');
+}
+
+// ═══════════════════════════════════════════════════════
+//  FACE DETECTION LOOP
+// ═══════════════════════════════════════════════════════
+async function startAttCam(){
+  if(!modelsLoaded){setSt('att','النماذج تُحمَّل...','y');return;}
+  const grade=document.getElementById('att-grade').value;
+  const section=document.getElementById('att-section').value;
+  if(!grade||!section){setSt('att','اختر الصف والشعبة أولاً','r');return;}
+  setSt('att','جاري تشغيل الكاميرا...','y');
+  document.getElementById('btn-att-start').disabled=true;
+  try{
+    attStream=await startStream(document.getElementById('att-vid'),attFacing);
+    attReady=true;
+    document.getElementById('btn-att-stop').disabled=false;
+    document.getElementById('btn-att-flip').style.display='inline-flex';
+    setSt('att','الكاميرا تعمل ✓ — التعرف التلقائي جارٍ...','g');
+    if(detLoop)clearInterval(detLoop);
+    detLoop=setInterval(()=>{if(attReady&&document.getElementById('auto-check').checked)detectAndMark();},1500);
+  }catch(e){
+    setSt('att','خطأ: '+(e.message||'تعذر الوصول للكاميرا'),'r');
+    document.getElementById('btn-att-start').disabled=false;
+  }
+}
+function stopAttCam(){
+  attReady=false;
+  if(detLoop){clearInterval(detLoop);detLoop=null;}
+  if(attStream){attStream.getTracks().forEach(t=>t.stop());attStream=null;}
+  document.getElementById('att-vid').srcObject=null;
+  clearCanvas('att-ov');
+  document.getElementById('btn-att-start').disabled=false;
+  document.getElementById('btn-att-stop').disabled=true;
+  document.getElementById('btn-att-flip').style.display='none';
+  setSt('att','تم الإيقاف','');
+}
+async function flipCam(){
+  attFacing=attFacing==='user'?'environment':'user';
+  if(attStream){attStream.getTracks().forEach(t=>t.stop());attStream=null;}
+  attReady=false;
+  try{attStream=await startStream(document.getElementById('att-vid'),attFacing);attReady=true;setSt('att','✓','g');}
+  catch(e){setSt('att','خطأ في التبديل','r');}
+}
+
+async function detectAndMark(){
+  const vid=document.getElementById('att-vid');
+  if(!vid.srcObject||vid.readyState<2)return;
+  const canvas=document.getElementById('att-ov');
+  const dw=vid.clientWidth||320,dh=vid.clientHeight||240;
+  canvas.width=dw;canvas.height=dh;
+  try{
+    const grade=document.getElementById('att-grade').value;
+    const section=document.getElementById('att-section').value;
+    const cls=students.filter(s=>s.grade===grade&&s.section===section&&s.descriptors?.length);
+    if(!cls.length)return;
+    const dets=await faceapi.detectAllFaces(vid,new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.4}))
+      .withFaceLandmarks(true).withFaceDescriptors();
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,dw,dh);
+    if(!dets.length)return;
+    const labeled=cls.map(s=>new faceapi.LabeledFaceDescriptors(s.id,s.descriptors.map(d=>new Float32Array(d))));
+    const matcher=new faceapi.FaceMatcher(labeled,0.5);
+    const sx=dw/vid.videoWidth,sy=dh/vid.videoHeight;
+    let marked=0;
+    dets.forEach(det=>{
+      const box=det.detection.box;
+      const x=box.x*sx,y=box.y*sy,bw=box.width*sx,bh=box.height*sy;
+      const match=matcher.findBestMatch(det.descriptor);
+      const isKnown=match.label!=='unknown';
+      const color=isKnown?'#22c55e':'#ef4444';
+      if(isKnown&&(!attState[match.label]||attState[match.label].status==='unknown')){
+        const now=new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
+        attState[match.label]={status:'present',time:now};
+        // update row if visible
+        const row=document.getElementById('arow-'+match.label);
+        if(row){
+          row.className='att-row present';
+          row.querySelectorAll('.att-btn').forEach(b=>b.classList.remove('on'));
+          row.querySelector('.att-btn-p')?.classList.add('on');
+          const badge=document.getElementById('abadge-'+match.label);
+          if(badge){badge.className='badge badge-present';badge.textContent='حاضر';}
+        }
+        marked++;
+      }
+      ctx.strokeStyle=color;ctx.lineWidth=3;
+      ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,bw,bh,5);else ctx.rect(x,y,bw,bh);ctx.stroke();
+      const lh=24;ctx.fillStyle=color+'cc';
+      ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y-lh-2,bw,lh,4);else ctx.rect(x,y-lh-2,bw,lh);ctx.fill();
+      ctx.fillStyle='#fff';ctx.font=`bold ${Math.max(10,Math.min(13,bw/8))}px Arial`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      const name=isKnown?(students.find(s=>s.id===match.label)?.name||'?'):'غير معروف';
+      ctx.fillText(name,x+bw/2,y-lh/2-2);
+    });
+    if(marked>0)updateDashStats();
+    setSt('att',`✓ اكتُشف ${dets.length} وجه${marked>0?' — تم تسجيل '+marked+' حاضر':''}  |  ${new Date().toLocaleTimeString('ar-SA')}` ,'g');
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════════════
+function updateDashboard(){
+  const today=new Date().toISOString().split('T')[0];
+  let present=0,absent=0,late=0;
+  const todaySessions=sessions.filter(s=>s.date===today);
+  const counted=new Set();
+  todaySessions.forEach(s=>{
+    Object.entries(s.records||{}).forEach(([sid,rec])=>{
+      if(!counted.has(sid)){
+        counted.add(sid);
+        if(rec.status==='present')present++;
+        else if(rec.status==='absent')absent++;
+        else if(rec.status==='late')late++;
+      }
+    });
+  });
+  document.getElementById('ds-students').textContent=students.length;
+  document.getElementById('ds-present').textContent=present;
+  document.getElementById('ds-absent').textContent=absent;
+  document.getElementById('ds-late').textContent=late;
+  const total=present+absent+late;
+  const pct=total?Math.round((present+late)/total*100):0;
+  document.getElementById('ds-pct').textContent=total?pct+'%':'—';
+  document.getElementById('ds-bar').style.width=pct+'%';
+
+  // Recent sessions
+  const recent=sessions.slice(-5).reverse();
+  const container=document.getElementById('dash-sessions');
+  if(!recent.length){container.innerHTML='<div class="empty"><span class="empty-icon">📭</span>لا توجد جلسات بعد</div>';return;}
+  container.innerHTML=`<div class="tbl-wrap"><table>
+    <thead><tr><th>التاريخ</th><th>الصف</th><th>الشعبة</th><th>الحاضرون</th><th>الغائبون</th><th>المتأخرون</th></tr></thead>
+    <tbody>${recent.map(s=>{
+      const p=Object.values(s.records||{}).filter(r=>r.status==='present').length;
+      const a=Object.values(s.records||{}).filter(r=>r.status==='absent').length;
+      const l=Object.values(s.records||{}).filter(r=>r.status==='late').length;
+      return`<tr><td>${s.date}</td><td>${s.grade}</td><td>${s.section}</td>
+        <td><span style="color:var(--green)">${p}</span></td>
+        <td><span style="color:var(--red)">${a}</span></td>
+        <td><span style="color:var(--yellow)">${l}</span></td></tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+function updateDashStats(){
+  const p=Object.values(attState).filter(r=>r.status==='present').length;
+  const a=Object.values(attState).filter(r=>r.status==='absent').length;
+  const l=Object.values(attState).filter(r=>r.status==='late').length;
+  document.getElementById('ds-present').textContent=p;
+  document.getElementById('ds-absent').textContent=a;
+  document.getElementById('ds-late').textContent=l;
+}
+
+function updateDashSection(){
+  const grade=document.getElementById('dash-grade').value;
+  const section=document.getElementById('dash-section').value;
+  document.getElementById('att-grade').value=grade||'';
+  document.getElementById('att-section').value=section||'';
+}
+
+function goToAttendance(){
+  const grade=document.getElementById('dash-grade').value;
+  const section=document.getElementById('dash-section').value;
+  const date=document.getElementById('dash-date').value;
+  document.getElementById('att-grade').value=grade||'';
+  document.getElementById('att-section').value=section||'';
+  document.getElementById('att-date').value=date||today;
+  showPage('attendance');
+  if(grade&&section)loadAttStudents();
+}
+
+// ═══════════════════════════════════════════════════════
+//  MANAGE ABSENCES
+// ═══════════════════════════════════════════════════════
+function runSearch(){
+  const from=document.getElementById('mng-from').value;
+  const to=document.getElementById('mng-to').value;
+  const grade=document.getElementById('mng-grade').value;
+  const section=document.getElementById('mng-section').value;
+  const name=document.getElementById('mng-name').value.trim().toLowerCase();
+
+  let filtered=sessions.filter(s=>{
+    if(from&&s.date<from)return false;
+    if(to&&s.date>to)return false;
+    if(grade&&s.grade!==grade)return false;
+    if(section&&s.section!==section)return false;
+    return true;
+  });
+
+  // Build rows: one per student per session
+  const rows=[];
+  filtered.forEach(sess=>{
+    Object.entries(sess.records||{}).forEach(([sid,rec])=>{
+      const st=students.find(s=>s.id===sid);
+      if(!st)return;
+      if(name&&!st.name.toLowerCase().includes(name))return;
+      if(rec.status==='absent'||rec.status==='late')
+        rows.push({sess,st,rec,sid});
+    });
+  });
+
+  if(!rows.length){
+    document.getElementById('mng-results').innerHTML='<div class="empty"><span class="empty-icon">✅</span>لا توجد نتائج غياب في هذه الفترة</div>';
+    return;
+  }
+
+  document.getElementById('mng-results').innerHTML=`
+    <div style="font-size:13px;color:var(--text3);margin-bottom:8px">تم العثور على ${rows.length} سجل</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>الاسم</th><th>الرقم</th><th>الصف</th><th>الشعبة</th><th>التاريخ</th><th>الحالة</th><th>الوقت</th><th></th></tr></thead>
+      <tbody>${rows.map((r,i)=>`
+        <tr id="mrow-${i}">
+          <td style="font-weight:500">${r.st.name}</td>
+          <td style="color:var(--text3)">${r.st.sid||'—'}</td>
+          <td>${r.st.grade}</td><td>${r.st.section}</td>
+          <td>${r.sess.date}</td>
+          <td><span class="badge ${r.rec.status==='absent'?'badge-absent':'badge-late'}">${r.rec.status==='absent'?'غائب':'متأخر'}</span></td>
+          <td style="color:var(--text3)">${r.rec.time||'—'}</td>
+          <td><button class="btn btn-danger" style="padding:5px 10px;font-size:11px" onclick="deleteRecord('${r.sess.id}','${r.sid}',${i})">🗑 حذف</button></td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+function deleteRecord(sessId,sid,rowIdx){
+  if(!confirm('حذف هذا السجل؟'))return;
+  const sess=sessions.find(s=>s.id===sessId);
+  if(sess&&sess.records?.[sid])delete sess.records[sid];
+  saveStorage();
+  const row=document.getElementById('mrow-'+rowIdx);
+  if(row)row.style.opacity='0',setTimeout(()=>row.remove(),300);
+}
+
+function clearSearch(){
+  ['mng-from','mng-to','mng-name'].forEach(id=>document.getElementById(id).value='');
+  ['mng-grade','mng-section'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('mng-results').innerHTML='<div class="empty"><span class="empty-icon">🔍</span>اضغط بحث لعرض النتائج</div>';
+}
+
+// ═══════════════════════════════════════════════════════
+//  ANALYSIS
+// ═══════════════════════════════════════════════════════
+function runAnalysis(){
+  const grade=document.getElementById('ana-grade').value;
+  const section=document.getElementById('ana-section').value;
+  if(!grade){document.getElementById('ana-results').innerHTML='<div class="empty"><span class="empty-icon">📊</span>اختر الصف أولاً</div>';return;}
+
+  const cls=students.filter(s=>s.grade===grade&&(!section||s.section===section));
+  if(!cls.length){document.getElementById('ana-results').innerHTML='<div class="empty"><span class="empty-icon">👥</span>لا يوجد طلاب في هذا الصف</div>';return;}
+
+  const totalSessions=sessions.filter(s=>s.grade===grade&&(!section||s.section===section)).length||1;
+
+  const data=cls.map(st=>{
+    const absent=sessions.filter(s=>s.grade===grade&&(!section||s.section===section))
+      .filter(s=>s.records?.[st.id]?.status==='absent').length;
+    const late=sessions.filter(s=>s.grade===grade&&(!section||s.section===section))
+      .filter(s=>s.records?.[st.id]?.status==='late').length;
+    const present=sessions.filter(s=>s.grade===grade&&(!section||s.section===section))
+      .filter(s=>s.records?.[st.id]?.status==='present').length;
+    const pct=Math.round(present/totalSessions*100);
+    let tag='good',tagText='منتظم';
+    if(pct<50){tag='danger';tagText='منقطع';}
+    else if(pct<80){tag='warn';tagText='كثير الغياب';}
+    return{...st,absent,late,present,pct,tag,tagText};
+  }).sort((a,b)=>a.pct-b.pct);
+
+  const good=data.filter(d=>d.tag==='good').length;
+  const warn=data.filter(d=>d.tag==='warn').length;
+  const danger=data.filter(d=>d.tag==='danger').length;
+  document.getElementById('ana-good').textContent=good;
+  document.getElementById('ana-warn').textContent=warn;
+  document.getElementById('ana-danger').textContent=danger;
+
+  document.getElementById('ana-results').innerHTML=`
+    <div style="font-size:12px;color:var(--text3);margin-bottom:8px">بناءً على ${totalSessions} جلسة مسجلة</div>
+    <div class="analysis-grid">
+      ${data.map(d=>`
+        <div class="ana-card">
+          ${d.photos?.[0]?`<img class="ana-avatar" src="${d.photos[0]}" alt="${d.name}">`:`<div class="ana-ph">👤</div>`}
+          <div class="ana-info">
+            <div class="ana-name">${d.name}</div>
+            <div class="ana-rate" style="color:var(--text3)">${d.present} حاضر | ${d.absent} غياب | ${d.late} تأخر</div>
+            <div class="ana-bar">
+              <div class="prog-wrap"><div class="prog-fill" style="width:${d.pct}%;background:${d.tag==='good'?'var(--green)':d.tag==='warn'?'var(--yellow)':'var(--red)'}"></div></div>
+            </div>
+            <div class="ana-tag ${d.tag}">${d.tagText} — ${d.pct}%</div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  STUDENTS LIST
+// ═══════════════════════════════════════════════════════
+function renderStudents(){
+  const grade=document.getElementById('std-grade').value;
+  const section=document.getElementById('std-section').value;
+  const filtered=students.filter(s=>(!grade||s.grade===grade)&&(!section||s.section===section));
+  const g=document.getElementById('students-grid');
+  if(!filtered.length){g.innerHTML='<div class="empty" style="grid-column:1/-1"><span class="empty-icon">👥</span>لا يوجد طلاب</div>';return;}
+  g.innerHTML=filtered.map(s=>`
+    <div class="std-card">
+      <button class="std-del" onclick="delStudent('${s.id}')">×</button>
+      ${s.photos?.[0]?`<img src="${s.photos[0]}" alt="${s.name}">`:`<div class="ph">👤</div>`}
+      <div class="nm">${s.name}</div>
+      ${s.sid?`<div class="mt">${s.sid}</div>`:''}
+      <div class="mt">${s.grade} - شعبة ${s.section}</div>
+      <div class="mt" style="color:${s.descriptors?.length?'var(--green)':'var(--yellow)'}">${s.descriptors?.length?'✅ مسجل بصرياً':'⚠️ بدون صورة'}</div>
+    </div>`).join('');
+}
+
+function delStudent(id){
+  if(!confirm('حذف هذا الطالب؟'))return;
+  students=students.filter(s=>s.id!==id);
+  saveStorage();renderStudents();updateDashboard();
+}
+function clearAllStudents(){
+  if(!students.length)return;
+  if(!confirm('حذف جميع الطلاب؟'))return;
+  students=[];saveStorage();renderStudents();updateDashboard();
+}
+
+function importStudents(){
+  const raw=prompt('الصق أسماء الطلاب (كل اسم في سطر):\n(سيتم تحديد الصف والشعبة لاحقاً)','');
+  if(!raw)return;
+  const grade=prompt('الصف:','الخامس');
+  const section=prompt('الشعبة (1-4):','1');
+  if(!grade||!section)return;
+  const names=raw.split('\n').map(n=>n.trim()).filter(n=>n.length>1);
+  let added=0;
+  names.forEach(name=>{
+    if(!students.find(s=>s.name===name&&s.grade===grade&&s.section===section)){
+      students.push({id:Date.now().toString()+'_'+Math.random().toString(36).slice(2,6),name,sid:'',grade,section,photos:[],descriptors:[],addedAt:new Date().toISOString()});
+      added++;
+    }
+  });
+  saveStorage();renderStudents();updateDashboard();
+  showNotice(`✅ تم استيراد ${added} طالب للصف ${grade} - شعبة ${section}`);
+}
+
+// ═══════════════════════════════════════════════════════
+//  EXPORT CSV
+// ═══════════════════════════════════════════════════════
+function exportCSV(){
+  if(!sessions.length||!students.length){alert('لا توجد بيانات');return;}
+  const header='الاسم,الرقم,الصف,الشعبة,التاريخ,الحالة,الوقت\n';
+  const rows=[];
+  sessions.forEach(s=>{
+    Object.entries(s.records||{}).forEach(([sid,rec])=>{
+      const st=students.find(x=>x.id===sid);
+      if(!st)return;
+      rows.push(`${st.name},${st.sid||''},${st.grade},${st.section},${s.date},${rec.status==='present'?'حاضر':rec.status==='absent'?'غائب':'متأخر'},${rec.time||''}`);
+    });
+  });
+  const blob=new Blob(['\uFEFF'+header+rows.join('\n')],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`سجل_الحضور_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════════════
+//  STORAGE
+// ═══════════════════════════════════════════════════════
+function saveStorage(){
+  try{localStorage.setItem('sch_students',JSON.stringify(students));}catch(e){}
+  try{localStorage.setItem('sch_sessions',JSON.stringify(sessions));}catch(e){}
+}
+function loadStorage(){
+  try{const d=localStorage.getItem('sch_students');if(d)students=JSON.parse(d);}catch(e){}
+  try{const d=localStorage.getItem('sch_sessions');if(d)sessions=JSON.parse(d);}catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════
+function setSt(m,msg,dot){
+  const ids={r:['rs','rd'],att:['att-st','att-dot']};
+  const[sid,did]=ids[m]||[];
+  if(sid)document.getElementById(sid).textContent=msg;
+  if(did){const d=document.getElementById(did);d.className='dot'+(dot?' '+dot:'');}
+}
+function clearCanvas(id){const c=document.getElementById(id);if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);}
+function showNotice(msg){
+  const n=document.createElement('div');
+  n.style.cssText='position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:999;background:#22c55e;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.3);transition:opacity .4s';
+  n.textContent=msg;document.body.appendChild(n);
+  setTimeout(()=>{n.style.opacity='0';setTimeout(()=>n.remove(),400);},2500);
+}
+</script>
+</body>
+</html>
