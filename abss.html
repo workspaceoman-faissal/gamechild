@@ -592,6 +592,8 @@ const today=new Date().toISOString().split('T')[0];
 ['att-date','dash-date','mng-from','mng-to'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
 
 document.getElementById('inp-name').addEventListener('input',updateSaveBtn);
+document.getElementById('inp-grade').addEventListener('change',updateSaveBtn);
+document.getElementById('inp-section').addEventListener('change',updateSaveBtn);
 loadStorage();
 updateDashboard();
 loadModels();
@@ -732,7 +734,7 @@ function updateSaveBtn(){
   const n=document.getElementById('inp-name').value.trim();
   const g=document.getElementById('inp-grade').value;
   const s=document.getElementById('inp-section').value;
-  document.getElementById('btn-save').disabled=!(n&&g&&s&&snaps.length>=1);
+  document.getElementById('btn-save').disabled=!(n&&g&&s);
 }
 
 async function saveStudent(){
@@ -751,7 +753,7 @@ async function saveStudent(){
       if(det)descriptors.push(Array.from(det.descriptor));
     }catch(e){}
   }
-  if(!descriptors.length&&snaps.length>0){setSt('r','لم يُكتشف وجه — تأكد من وضوح الصورة والإضاءة','r');document.getElementById('btn-save').disabled=false;return;}
+  // if no face detected just save without descriptor
   const student={id:Date.now().toString(),name,sid,grade,section,photos:snaps.length?[snaps[0]]:[],descriptors,addedAt:new Date().toISOString()};
   students.push(student);
   saveStorage();renderStudents();
