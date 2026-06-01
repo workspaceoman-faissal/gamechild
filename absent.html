@@ -976,8 +976,9 @@ async function detectAndMark(){
       const match=matcher.findBestMatch(det.descriptor);
       const isKnown=match.label!=='unknown';
       const color=isKnown?'#16a34a':'#dc2626';
-      if(isKnown&&(!attState[match.label]||attState[match.label].status==='unknown')){
+      if(isKnown){
         const now=new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
+        const prev=attState[match.label]?.status;
         attState[match.label]={status:'present',time:now};
         const row=document.getElementById('arow-'+match.label);
         if(row){
@@ -986,8 +987,10 @@ async function detectAndMark(){
           row.querySelector('.att-btn-p')?.classList.add('on');
           const badge=document.getElementById('abadge-'+match.label);
           if(badge){badge.className='badge badge-present';badge.textContent='حاضر';}
+          const meta=row.querySelector('.att-meta');
+          if(meta){const st=students.find(s=>s.id===match.label);meta.textContent=(st?.sid||'')+' · ⏱ '+now;}
         }
-        marked++;
+        if(prev!=='present')marked++;
       }
       ctx.strokeStyle=color;ctx.lineWidth=3;
       ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,bw,bh,6);else ctx.rect(x,y,bw,bh);ctx.stroke();
