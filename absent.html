@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>نظام الحضور المدرسي</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f6fb;
+  --white: #ffffff;
+  --card: #ffffff;
+  --border: #e4e9f2;
+  --accent: #2563eb;
+  --accent-light: #eff4ff;
+  --accent-dark: #1d4ed8;
+  --green: #16a34a;
+  --green-bg: #f0fdf4;
+  --green-border: #bbf7d0;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
+  --red-border: #fecaca;
+  --yellow: #d97706;
+  --yellow-bg: #fffbeb;
+  --yellow-border: #fde68a;
+  --text: #0f172a;
+  --text2: #475569;
+  --text3: #94a3b8;
+  --radius: 14px;
+  --radius-sm: 9px;
+  --shadow: 0 1px 4px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.05);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+  --font: 'Tajawal', sans-serif;
+  --nav-h: 64px;
+  --bottom-h: 68px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); direction: rtl; font-size: 15px; -webkit-font-smoothing: antialiased; }
+
+/* ─── LAYOUT ─── */
+.shell { display: flex; height: 100vh; overflow: hidden; }
+.sidebar { width: 240px; background: var(--white); border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.topbar { height: var(--nav-h); background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.25rem; gap: 12px; flex-shrink: 0; box-shadow: 0 1px 0 var(--border); }
+.content { flex: 1; overflow-y: auto; padding: 1.25rem; scroll-behavior: smooth; }
+.content::-webkit-scrollbar { width: 4px; }
+.content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ─── SIDEBAR ─── */
+.logo { padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.logo-text { font-size: 15px; font-weight: 800; color: var(--text); }
+.logo-sub { font-size: 11px; color: var(--text3); font-weight: 400; margin-top: 1px; }
+nav { flex: 1; padding: .75rem; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+.nav-group { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; padding: 8px 10px 4px; margin-top: 4px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; color: var(--text2); font-size: 14px; font-weight: 500; transition: all .15s; border: none; background: none; width: 100%; text-align: right; font-family: var(--font); }
+.nav-item:hover { background: var(--bg); color: var(--text); }
+.nav-item.active { background: var(--accent-light); color: var(--accent); font-weight: 700; }
+.nav-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; background: var(--bg); transition: background .15s; }
+.nav-item.active .nav-icon { background: var(--accent-light); }
+.sidebar-footer { padding: .75rem 1rem; border-top: 1px solid var(--border); }
+.model-status { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 9px; background: var(--bg); font-size: 12px; color: var(--text3); }
+.mdot { width: 7px; height: 7px; border-radius: 50%; background: #d1d5db; flex-shrink: 0; transition: background .3s; }
+.mdot.ok { background: var(--green); box-shadow: 0 0 0 3px rgba(22,163,74,.15); }
+.mdot.loading { background: var(--yellow); animation: blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ─── TOP BAR ─── */
+.menu-btn { width: 38px; height: 38px; border-radius: 9px; background: var(--bg); border: 1px solid var(--border); cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 18px; color: var(--text2); flex-shrink: 0; }
+.topbar-title { font-size: 17px; font-weight: 800; flex: 1; color: var(--text); }
+.topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.topbar-date { font-size: 12px; color: var(--text3); white-space: nowrap; background: var(--bg); padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border); }
+
+/* ─── PAGES ─── */
+.page { display: none; animation: fadeIn .2s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* ─── SECTION HEADER ─── */
+.sec-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.1rem; flex-wrap: wrap; gap: 8px; }
+.sec-title { font-size: 17px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.sec-sub { font-size: 13px; color: var(--text3); margin-top: 2px; font-weight: 400; }
+
+/* ─── STAT CARDS ─── */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.1rem; }
+.stat { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow); }
+.stat-icon-wrap { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.stat.blue .stat-icon-wrap { background: #eff6ff; }
+.stat.green .stat-icon-wrap { background: var(--green-bg); }
+.stat.red .stat-icon-wrap { background: var(--red-bg); }
+.stat.yellow .stat-icon-wrap { background: var(--yellow-bg); }
+.stat-body { flex: 1; min-width: 0; }
+.stat-num { font-size: 26px; font-weight: 800; line-height: 1; }
+.stat.blue .stat-num { color: var(--accent); }
+.stat.green .stat-num { color: var(--green); }
+.stat.red .stat-num { color: var(--red); }
+.stat.yellow .stat-num { color: var(--yellow); }
+.stat-label { font-size: 12px; color: var(--text3); margin-top: 3px; font-weight: 500; }
+
+/* ─── CARDS ─── */
+.card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem; box-shadow: var(--shadow); }
+.card + .card { margin-top: 10px; }
+.card-head { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: .9rem; display: flex; align-items: center; gap: 7px; }
+.card-head .ch-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--accent-light); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+
+/* ─── FORM ─── */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 12px; font-weight: 600; color: var(--text2); }
+.field input, .field select {
+  background: var(--bg); border: 1.5px solid var(--border); color: var(--text);
+  padding: 10px 12px; border-radius: var(--radius-sm); font-size: 14px;
+  font-family: var(--font); outline: none; transition: border .15s, box-shadow .15s; width: 100%;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+.field select option { background: #fff; }
+
+/* ─── BUTTONS ─── */
+.btn { padding: 10px 18px; border-radius: var(--radius-sm); border: 1.5px solid transparent; cursor: pointer; font-size: 13px; font-weight: 700; font-family: var(--font); display: inline-flex; align-items: center; gap: 6px; transition: all .15s; white-space: nowrap; line-height: 1; }
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .4; pointer-events: none; }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-green { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+.btn-green:hover { background: var(--green); color: #fff; border-color: var(--green); }
+.btn-red { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+.btn-red:hover { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-yellow { background: var(--yellow-bg); color: var(--yellow); border-color: var(--yellow-border); }
+.btn-yellow:hover { background: var(--yellow); color: #fff; border-color: var(--yellow); }
+.btn-ghost { background: var(--white); color: var(--text2); border-color: var(--border); }
+.btn-ghost:hover { background: var(--bg); color: var(--text); }
+.btn-danger { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+.big-btn { width: 100%; padding: 14px; font-size: 15px; justify-content: center; border-radius: var(--radius); margin-top: 10px; }
+
+/* ─── BTN ROW ─── */
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn-row .spacer { flex: 1; }
+
+/* ─── BADGES ─── */
+.badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.badge-present { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.badge-absent { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+.badge-late { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow-border); }
+.badge-unknown { background: var(--bg); color: var(--text3); border: 1px solid var(--border); }
+
+/* ─── ATT TABS ─── */
+.mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.mode-tab { padding: 12px; border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--white); cursor: pointer; font-size: 13px; font-weight: 700; font-family: var(--font); text-align: center; color: var(--text2); transition: all .15s; }
+.mode-tab:hover { border-color: var(--accent); color: var(--accent); }
+.mode-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 4px 14px rgba(37,99,235,.3); }
+.mode-tab .mt-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+
+/* ─── VIDEO ─── */
+.video-wrap { position: relative; border-radius: var(--radius); overflow: hidden; background: #000; width: 100%; }
+.video-wrap video { width: 100%; height: auto; display: block; min-height: 200px; }
+canvas.ov { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.cam-strip { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+
+/* ─── STATUS BAR ─── */
+.status-bar { margin-top: 8px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--bg); border: 1.5px solid var(--border); font-size: 13px; color: var(--text2); display: flex; align-items: center; gap: 8px; min-height: 40px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #d1d5db; flex-shrink: 0; }
+.dot.g { background: var(--green); box-shadow: 0 0 0 3px rgba(22,163,74,.15); }
+.dot.r { background: var(--red); }
+.dot.y { background: var(--yellow); animation: blink 1s infinite; }
+
+/* ─── ATTENDANCE LIST ─── */
+.att-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.att-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-sm); transition: all .2s; }
+.att-row.present { border-color: var(--green-border); background: var(--green-bg); }
+.att-row.absent { border-color: var(--red-border); background: var(--red-bg); }
+.att-row.late { border-color: var(--yellow-border); background: var(--yellow-bg); }
+.att-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid var(--border); }
+.att-avatar-ph { width: 40px; height: 40px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; border: 2px solid var(--border); }
+.att-info { flex: 1; min-width: 0; }
+.att-name { font-size: 14px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.att-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.att-btns { display: flex; gap: 5px; flex-shrink: 0; }
+.att-btn { width: 34px; height: 34px; border-radius: 9px; border: 1.5px solid; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; transition: all .13s; background: var(--white); font-family: var(--font); }
+.att-btn:active { transform: scale(.92); }
+.att-btn-p { border-color: var(--green-border); color: var(--green); }
+.att-btn-p.on, .att-btn-p:hover { background: var(--green); border-color: var(--green); color: #fff; }
+.att-btn-a { border-color: var(--red-border); color: var(--red); }
+.att-btn-a.on, .att-btn-a:hover { background: var(--red); border-color: var(--red); color: #fff; }
+.att-btn-l { border-color: var(--yellow-border); color: var(--yellow); }
+.att-btn-l.on, .att-btn-l:hover { background: var(--yellow); border-color: var(--yellow); color: #fff; }
+
+/* ─── PROGRESS ─── */
+.prog-wrap { background: var(--border); border-radius: 20px; height: 7px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 20px; transition: width .5s ease; }
+.model-prog { background: var(--border); height: 4px; border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.model-prog-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .4s; }
+
+/* ─── SNAPS ─── */
+.snaps { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; min-height: 30px; }
+.snaps img { width: 68px; height: 68px; border-radius: 10px; object-fit: cover; border: 2px solid var(--border); }
+
+/* ─── STUDENT GRID ─── */
+.std-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
+.std-card { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 14px 10px; text-align: center; position: relative; box-shadow: var(--shadow); transition: box-shadow .15s; }
+.std-card:hover { box-shadow: var(--shadow-lg); }
+.std-card img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); margin: 0 auto 8px; display: block; }
+.std-card .ph { width: 60px; height: 60px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 8px; border: 2px solid var(--border); }
+.std-card .nm { font-size: 13px; font-weight: 700; word-break: break-word; color: var(--text); line-height: 1.3; }
+.std-card .mt { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.std-del { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; padding: 0; opacity: 0; transition: opacity .15s; }
+.std-card:hover .std-del { opacity: 1; }
+
+/* ─── TABLE ─── */
+.tbl-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { background: var(--bg); padding: 10px 12px; text-align: right; font-weight: 700; font-size: 12px; color: var(--text2); border-bottom: 1.5px solid var(--border); white-space: nowrap; }
+tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--bg); }
+
+/* ─── ANALYSIS CARDS ─── */
+.ana-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.ana-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow); }
+.ana-row.good { border-color: var(--green-border); }
+.ana-row.warn { border-color: var(--yellow-border); }
+.ana-row.danger { border-color: var(--red-border); }
+.ana-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid var(--border); }
+.ana-ph { width: 44px; height: 44px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; border: 2px solid var(--border); }
+.ana-info { flex: 1; min-width: 0; }
+.ana-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.ana-stats { font-size: 12px; color: var(--text3); margin-top: 3px; }
+.ana-bar-wrap { margin-top: 6px; }
+.ana-tag { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 6px; display: inline-block; margin-top: 5px; }
+.ana-tag.good { background: var(--green-bg); color: var(--green); }
+.ana-tag.warn { background: var(--yellow-bg); color: var(--yellow); }
+.ana-tag.danger { background: var(--red-bg); color: var(--red); }
+.ana-pct { font-size: 20px; font-weight: 800; flex-shrink: 0; min-width: 52px; text-align: center; }
+.ana-row.good .ana-pct { color: var(--green); }
+.ana-row.warn .ana-pct { color: var(--yellow); }
+.ana-row.danger .ana-pct { color: var(--red); }
+
+/* ─── EMPTY STATE ─── */
+.empty { text-align: center; padding: 3rem 1rem; color: var(--text3); }
+.empty-icon { font-size: 44px; display: block; margin-bottom: 10px; opacity: .35; }
+.empty p { font-size: 14px; }
+
+/* ─── NOTICE ─── */
+.notice { padding: 11px 14px; border-radius: var(--radius-sm); font-size: 13px; display: flex; gap: 8px; align-items: flex-start; margin-bottom: 12px; font-weight: 500; }
+.notice.info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+.notice.warn { background: var(--yellow-bg); border: 1px solid var(--yellow-border); color: var(--yellow); }
+.notice.success { background: var(--green-bg); border: 1px solid var(--green-border); color: var(--green); }
+
+/* ─── DIVIDER ─── */
+.divider { height: 1px; background: var(--border); margin: 12px 0; }
+
+/* ─── BOTTOM NAV (mobile) ─── */
+.bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: var(--bottom-h); background: var(--white); border-top: 1px solid var(--border); z-index: 100; padding: 0 .5rem; box-shadow: 0 -4px 20px rgba(0,0,0,.08); }
+.bottom-nav-inner { display: flex; align-items: center; justify-content: space-around; height: 100%; }
+.bnav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 8px; border-radius: 10px; cursor: pointer; font-size: 10px; font-weight: 600; color: var(--text3); background: none; border: none; font-family: var(--font); min-width: 52px; transition: all .15s; }
+.bnav-item.active { color: var(--accent); }
+.bnav-item.active .bnav-icon { background: var(--accent-light); }
+.bnav-icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: none; transition: background .15s; }
+
+/* ─── OVERLAY ─── */
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 49; backdrop-filter: blur(2px); }
+.sidebar-overlay.show { display: block; }
+
+/* ─── QUICK SELECT PILLS ─── */
+.pill-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.pill { padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--white); font-size: 12px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all .13s; font-family: var(--font); }
+.pill:hover { border-color: var(--accent); color: var(--accent); }
+.pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 720px) {
+  .sidebar { position: fixed; top: 0; right: 0; bottom: 0; transform: translateX(100%); transition: transform .25s cubic-bezier(.4,0,.2,1); box-shadow: none; }
+  .sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
+  .menu-btn { display: flex; }
+  .bottom-nav { display: flex; }
+  .content { padding: 1rem .875rem calc(var(--bottom-h) + 1rem); }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr 1fr; }
+  .topbar-date { display: none; }
+  .reg-layout { grid-template-columns: 1fr !important; }
+  .dash-grid { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 400px) {
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-num { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="shell">
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🏫</div>
+      <div>
+        <div class="logo-text">نظام الحضور</div>
+        <div class="logo-sub">المدرسي الذكي</div>
+      </div>
+    </div>
+    <nav>
+      <div class="nav-group">الرئيسية</div>
+      <button class="nav-item active" onclick="showPage('dashboard')">
+        <div class="nav-icon">📊</div> لوحة التحكم
+      </button>
+      <button class="nav-item" onclick="showPage('attendance')">
+        <div class="nav-icon">✅</div> تسجيل الحضور
+      </button>
+      <div class="nav-group">الطلاب</div>
+      <button class="nav-item" onclick="showPage('register')">
+        <div class="nav-icon">📸</div> تسجيل طالب جديد
+      </button>
+      <button class="nav-item" onclick="showPage('students')">
+        <div class="nav-icon">👥</div> قائمة الطلاب
+      </button>
+      <div class="nav-group">التقارير</div>
+      <button class="nav-item" onclick="showPage('manage')">
+        <div class="nav-icon">📋</div> إدارة الغياب
+      </button>
+      <button class="nav-item" onclick="showPage('analysis')">
+        <div class="nav-icon">📈</div> تحليل الغياب
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="model-status">
+        <div class="mdot loading" id="model-dot"></div>
+        <div style="flex:1">
+          <div id="model-txt">تحميل النماذج...</div>
+          <div class="model-prog"><div class="model-prog-fill" id="mpf" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main">
+    <div class="topbar">
+      <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-title" id="page-title">لوحة التحكم</div>
+      <div class="topbar-right">
+        <div class="topbar-date" id="top-date"></div>
+        <button class="btn btn-ghost" style="padding:8px 12px;font-size:12px" onclick="exportCSV()">📤 تصدير</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══════════ DASHBOARD ══════════ -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-row">
+          <div class="stat blue">
+            <div class="stat-icon-wrap">👨‍🎓</div>
+            <div class="stat-body"><div class="stat-num" id="ds-students">0</div><div class="stat-label">إجمالي الطلاب</div></div>
+          </div>
+          <div class="stat green">
+            <div class="stat-icon-wrap">✅</div>
+            <div class="stat-body"><div class="stat-num" id="ds-present">0</div><div class="stat-label">حاضر اليوم</div></div>
+          </div>
+          <div class="stat red">
+            <div class="stat-icon-wrap">❌</div>
+            <div class="stat-body"><div class="stat-num" id="ds-absent">0</div><div class="stat-label">غائب اليوم</div></div>
+          </div>
+          <div class="stat yellow">
+            <div class="stat-icon-wrap">⏰</div>
+            <div class="stat-body"><div class="stat-num" id="ds-late">0</div><div class="stat-label">متأخر اليوم</div></div>
+          </div>
+        </div>
+
+        <div class="dash-grid" style="display:grid;grid-template-columns:1.4fr 1fr;gap:10px">
+          <div class="card">
+            <div class="card-head"><div class="ch-icon">⚡</div> إجراء سريع</div>
+            <div class="form-grid">
+              <div class="field"><label>التاريخ</label><input type="date" id="dash-date"></div>
+              <div class="field"><label>الصف</label>
+                <select id="dash-grade" onchange="updateDashSection()">
+                  <option value="">-- الصف --</option>
+                  <option>الخامس</option><option>السادس</option><option>السابع</option><option>الثامن</option><option>التاسع</option>
+                </select>
+              </div>
+              <div class="field"><label>الشعبة</label>
+                <select id="dash-section" onchange="updateDashSection()">
+                  <option value="">-- الشعبة --</option>
+                  <option>1</option><option>2</option><option>3</option><option>4</option>
+                </select>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-primary" onclick="goToAttendance()">✅ تسجيل الحضور</button>
+              <button class="btn btn-ghost" onclick="showPage('register')">📸 تسجيل طالب</button>
+            </div>
+          </div>
+          <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+            <div style="font-size:42px;font-weight:800;color:var(--accent);line-height:1" id="ds-pct">—</div>
+            <div style="font-size:12px;color:var(--text3);margin:6px 0 10px">نسبة الحضور اليوم</div>
+            <div class="prog-wrap" style="width:100%"><div class="prog-fill" id="ds-bar" style="width:0%;background:var(--accent)"></div></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:10px">
+          <div class="card-head"><div class="ch-icon">🕐</div> آخر الجلسات</div>
+          <div id="dash-sessions"><div class="empty"><span class="empty-icon">📭</span><p>لا توجد جلسات بعد</p></div></div>
+        </div>
+      </div>
+
+      <!-- ══════════ ATTENDANCE ══════════ -->
+      <div class="page" id="page-attendance">
+        <!-- Selector card -->
+        <div class="card">
+          <div class="card-head"><div class="ch-icon">📅</div> اختر الصف والتاريخ</div>
+          <div class="form-grid">
+            <div class="field"><label>التاريخ</label><input type="date" id="att-date"></div>
+            <div class="field"><label>الصف</label>
+              <select id="att-grade" onchange="loadAttStudents()">
+                <option value="">-- اختر الصف --</option>
+                <option>الخامس</option><option>السادس</option><option>السابع</option><option>الثامن</option><option>التاسع</option>
+              </select>
+            </div>
+            <div class="field"><label>الشعبة</label>
+              <select id="att-section" onchange="loadAttStudents()">
+                <option value="">-- الشعبة --</option>
+                <option>1</option><option>2</option><option>3</option><option>4</option>
+              </select>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-green" onclick="markAll('present')">✅ تحضير الكل</button>
+            <button class="btn btn-red" onclick="markAll('absent')">❌ غياب الكل</button>
+            <button class="btn btn-yellow" onclick="markAll('late')">⏰ تأخر الكل</button>
+            <div class="spacer"></div>
+            <button class="btn btn-primary" onclick="saveSession()">💾 حفظ الكشف</button>
+          </div>
+        </div>
+
+        <!-- Mode selector -->
+        <div class="mode-tabs" style="margin-top:10px">
+          <button class="mode-tab active" onclick="attTab('auto')" id="tab-auto">
+            <span class="mt-icon">🤖</span>تلقائي بالكاميرا
+          </button>
+          <button class="mode-tab" onclick="attTab('manual')" id="tab-manual">
+            <span class="mt-icon">✍️</span>يدوي
+          </button>
+        </div>
+
+        <!-- Auto mode -->
+        <div id="att-auto">
+          <div class="card">
+            <div class="card-head"><div class="ch-icon">📷</div> التعرف التلقائي على الوجوه</div>
+            <div class="video-wrap">
+              <video id="att-vid" autoplay playsinline muted webkit-playsinline></video>
+              <canvas id="att-ov" class="ov"></canvas>
+            </div>
+            <div class="cam-strip">
+              <button class="btn btn-primary" onclick="startAttCam()" id="btn-att-start">▶ تشغيل الكاميرا</button>
+              <button class="btn btn-danger" onclick="stopAttCam()" id="btn-att-stop" disabled>✕ إيقاف</button>
+              <button class="btn btn-ghost" onclick="flipCam()" id="btn-att-flip" style="display:none">🔄 قلب</button>
+              <label style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer;margin-right:auto;font-weight:600">
+                <input type="checkbox" id="auto-check" checked style="width:16px;height:16px"> تعرف تلقائي
+              </label>
+            </div>
+            <div class="status-bar"><div class="dot" id="att-dot"></div><span id="att-st">اختر الصف والشعبة ثم شغّل الكاميرا</span></div>
+          </div>
+        </div>
+
+        <!-- Manual mode -->
+        <div id="att-manual" style="display:none">
+          <div class="notice info">✍️ استخدم الأزرار في القائمة أدناه لتسجيل حضور كل طالب يدوياً</div>
+        </div>
+
+        <!-- Students list -->
+        <div class="att-list" id="att-list">
+          <div class="empty"><span class="empty-icon">👆</span><p>اختر الصف والشعبة أولاً</p></div>
+        </div>
+      </div>
+
+      <!-- ══════════ REGISTER ══════════ -->
+      <div class="page" id="page-register">
+        <div class="notice info">💡 التقط 3 صور على الأقل من زوايا مختلفة للتعرف التلقائي — يمكن الحفظ بدون صورة للتسجيل اليدوي فقط</div>
+        <div class="reg-layout" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <!-- Camera -->
+          <div class="card">
+            <div class="card-head"><div class="ch-icon">📷</div> الكاميرا</div>
+            <div class="video-wrap">
+              <video id="reg-vid" autoplay playsinline muted webkit-playsinline></video>
+            </div>
+            <div class="cam-strip">
+              <button class="btn btn-primary" onclick="startRegCam()" id="btn-rs">▶ تشغيل</button>
+              <button class="btn btn-danger" onclick="stopRegCam()" id="btn-rstop" disabled>✕ إيقاف</button>
+              <button class="btn btn-ghost" onclick="flipRegCam()" id="btn-rflip" style="display:none">🔄 قلب</button>
+            </div>
+            <button class="btn btn-green big-btn" onclick="capturePhoto()" id="btn-cap" disabled>📷 التقاط صورة</button>
+            <div class="status-bar"><div class="dot" id="rd"></div><span id="rs">اضغط "تشغيل" للبدء</span></div>
+            <!-- Snaps preview -->
+            <div class="divider"></div>
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">الصور الملتقطة:</div>
+            <div class="snaps" id="snaps"><span style="font-size:12px;color:var(--text3)">لا توجد صور بعد</span></div>
+            <div id="snap-cnt" style="font-size:12px;color:var(--green);margin-top:6px;font-weight:600"></div>
+          </div>
+          <!-- Form -->
+          <div class="card">
+            <div class="card-head"><div class="ch-icon">📋</div> بيانات الطالب</div>
+            <div class="field" style="margin-bottom:10px">
+              <label>الاسم الكامل *</label>
+              <input id="inp-name" type="text" placeholder="مثال: أحمد محمد العمري" autocomplete="off">
+            </div>
+            <div class="field" style="margin-bottom:10px">
+              <label>الرقم الدراسي</label>
+              <input id="inp-sid" type="text" placeholder="مثال: 2024001" autocomplete="off">
+            </div>
+            <div class="field" style="margin-bottom:10px">
+              <label>الصف *</label>
+              <select id="inp-grade" onchange="updateSaveBtn()">
+                <option value="">-- اختر الصف --</option>
+                <option>الخامس</option><option>السادس</option><option>السابع</option><option>الثامن</option><option>التاسع</option>
+              </select>
+            </div>
+            <div class="field" style="margin-bottom:16px">
+              <label>الشعبة *</label>
+              <select id="inp-section" onchange="updateSaveBtn()">
+                <option value="">-- اختر --</option>
+                <option>1</option><option>2</option><option>3</option><option>4</option>
+              </select>
+            </div>
+            <div class="divider"></div>
+            <div class="btn-row" style="margin-top:14px">
+              <button class="btn btn-primary" onclick="saveStudent()" id="btn-save" disabled style="flex:1;justify-content:center">💾 حفظ الطالب</button>
+              <button class="btn btn-ghost" onclick="clearSnaps()">🗑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════ STUDENTS ══════════ -->
+      <div class="page" id="page-students">
+        <div class="card">
+          <div class="form-grid" style="margin-bottom:10px">
+            <div class="field"><label>فلتر الصف</label>
+              <select id="std-grade" onchange="renderStudents()">
+                <option value="">الكل</option>
+                <option>الخامس</option><option>السادس</option><option>السابع</option><option>الثامن</option><option>التاسع</option>
+              </select>
+            </div>
+            <div class="field"><label>فلتر الشعبة</label>
+              <select id="std-section" onchange="renderStudents()">
+                <option value="">الكل</option>
+                <option>1</option><option>2</option><option>3</option><option>4</option>
+              </select>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-ghost" onclick="importStudents()">📥 استيراد أسماء</button>
+            <div class="spacer"></div>
+            <button class="btn btn-danger" onclick="clearAllStudents()">🗑 مسح الكل</button>
+          </div>
+        </div>
+        <div class="std-grid" id="students-grid">
+          <div class="empty" style="grid-column:1/-1"><span class="empty-icon">👥</span><p>لا يوجد طلاب بعد</p></div>
+        </div>
+      </div>
+
+      <!-- ══════════ MANAGE ══════════ -->
+      <div class="page" id="page-manage">
+        <div class="card">
+          <div class="card-head"><div class="ch-icon">🔍</div> بحث في سجلات الغياب</div>
+          <div class="form-grid">
+            <div class="field"><label>من تاريخ</label><input type="date" id="mng-from"></div>
+            <div class="field"><label>إلى تاريخ</label><input type="date" id="mng-to"></div>
+            <div class="field"><label>الصف</label>
+              <select id="mng-grade">
+                <option value="">الكل</option>
+                <option>الخامس</option><option>السادس</option><option>السابع</option><option>الثامن</option><option>التاسع</option>
+              </select>
+            </div>
+            <div class="field"><label>الشعبة</label>
+              <select id="mng-section">
+                <option value="">الكل</option><option>1</option><option>2</option><option>3</option><option>4</option>
+              </select>
+            </div>
+            <div class="field"><label>اسم الطالب</label><input id="mng-name" type="text" placeholder="بحث بالاسم..."></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="runSearch()">🔍 بحث</button>
+            <button class="btn btn-ghost" onclick="clearSearch()">✕ مسح</button>
+            <div class="spacer"></div>
+            <button class="btn btn-ghost" onclick="exportCSV()">📤 تصدير CSV</button>
+          </div>
+        </div>
+        <div id="mng-results" style="margin-top:10px">
+          <div class="empty"><span class="empty-icon">🔍</span><p>اضغط بحث لعرض النتائج</p></div>
+        </div>
+      </div>
+
+      <!-- ══════════ ANALYSIS ══════════ -->
+      <div class="page" id="page-analysis">
+        <div class="card">
+          <div class="card-head"><div class="ch-icon">📈</div> تحليل الغياب</div>
+          <div class="form-grid">
+            <div class="field"><label>الصف</label>
+              <select id="ana-grade" onchange="runAnalysis()">
+                <option value="">-- اختر الصف --</option>
+                <option>الخامس</option><option>السادس</option><option>السابع</option><option>الثامن</option><option>التاسع</option>
+              </select>
+            </div>
+            <div class="field"><label>الشعبة</label>
+              <select id="ana-section" onchange="runAnalysis()">
+                <option value="">الكل</option><option>1</option><option>2</option><option>3</option><option>4</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="stats-row" style="margin-top:10px">
+          <div class="stat green"><div class="stat-icon-wrap">😊</div><div class="stat-body"><div class="stat-num" id="ana-good">0</div><div class="stat-label">حضور منتظم</div></div></div>
+          <div class="stat yellow"><div class="stat-icon-wrap">⚠️</div><div class="stat-body"><div class="stat-num" id="ana-warn">0</div><div class="stat-label">كثير الغياب</div></div></div>
+          <div class="stat red"><div class="stat-icon-wrap">🚫</div><div class="stat-body"><div class="stat-num" id="ana-danger">0</div><div class="stat-label">منقطع</div></div></div>
+          <div class="stat blue"><div class="stat-icon-wrap">📊</div><div class="stat-body"><div class="stat-num" id="ana-total">0</div><div class="stat-label">إجمالي الطلاب</div></div></div>
+        </div>
+        <div id="ana-results" style="margin-top:10px">
+          <div class="empty"><span class="empty-icon">📊</span><p>اختر الصف لعرض التحليل</p></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- Bottom Nav (mobile) -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bnav-item active" onclick="showPage('dashboard')"><div class="bnav-icon">📊</div>الرئيسية</button>
+    <button class="bnav-item" onclick="showPage('attendance')"><div class="bnav-icon">✅</div>الحضور</button>
+    <button class="bnav-item" onclick="showPage('register')"><div class="bnav-icon">📸</div>تسجيل</button>
+    <button class="bnav-item" onclick="showPage('manage')"><div class="bnav-icon">📋</div>الغياب</button>
+    <button class="bnav-item" onclick="showPage('analysis')"><div class="bnav-icon">📈</div>تحليل</button>
+  </div>
+</nav>
+
+<!-- Model loading toast -->
+<div id="model-toast" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:300;width:min(340px,90vw)">
+  <div class="notice info" style="margin:0;box-shadow:var(--shadow-lg)">
+    <div style="flex:1">⏳ جاري تحميل نماذج الذكاء الاصطناعي...
+      <div class="model-prog" style="margin-top:6px"><div class="model-prog-fill" id="mpf2" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script>
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let modelsLoaded=false;
+let students=[], sessions=[];
+let attState={}, attGrade='', attSection='';
+let regStream=null, attStream=null;
+let regFacing='user', attFacing='environment';
+let regReady=false, attReady=false;
+let snaps=[], detLoop=null;
+
+const MODEL_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.14/model';
+const PAGES={dashboard:'لوحة التحكم',attendance:'تسجيل الحضور',register:'تسجيل طالب جديد',manage:'إدارة الغياب',analysis:'تحليل الغياب',students:'قائمة الطلاب'};
+const BNAV_PAGES=['dashboard','attendance','register','manage','analysis'];
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+const todayStr = new Date().toISOString().split('T')[0];
+document.getElementById('top-date').textContent = new Date().toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+['att-date','dash-date','mng-from','mng-to'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=todayStr;});
+document.getElementById('inp-name').addEventListener('input',updateSaveBtn);
+document.getElementById('inp-grade').addEventListener('change',updateSaveBtn);
+document.getElementById('inp-section').addEventListener('change',updateSaveBtn);
+loadStorage(); updateDashboard(); loadModels();
+
+// ══════════════════════════════════════════
+//  MODELS
+// ══════════════════════════════════════════
+async function loadModels(){
+  const set=(w)=>{document.getElementById('mpf').style.width=w+'%';document.getElementById('mpf2').style.width=w+'%';};
+  try{
+    set(15); await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    set(50); await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
+    set(85); await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    set(100); modelsLoaded=true;
+    document.getElementById('model-dot').className='mdot ok';
+    document.getElementById('model-txt').textContent='النماذج جاهزة ✓';
+    const t=document.getElementById('model-toast');
+    t.innerHTML='<div class="notice success" style="margin:0;box-shadow:var(--shadow-lg)">✅ نماذج التعرف جاهزة</div>';
+    setTimeout(()=>t.style.display='none',2500);
+  }catch(e){
+    document.getElementById('model-dot').className='mdot';
+    document.getElementById('model-txt').textContent='خطأ في التحميل';
+    document.getElementById('model-toast').innerHTML='<div class="notice" style="margin:0;background:#fef2f2;border-color:#fecaca;color:#dc2626">❌ خطأ — تأكد من الاتصال بالإنترنت</div>';
+  }
+}
+
+// ══════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════
+function showPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach((b,i)=>b.classList.toggle('active',Object.keys(PAGES)[i]===page));
+  document.querySelectorAll('.bnav-item').forEach((b,i)=>b.classList.toggle('active',BNAV_PAGES[i]===page));
+  document.getElementById('page-title').textContent=PAGES[page]||'';
+  closeSidebar();
+  if(page==='dashboard')updateDashboard();
+  if(page==='students')renderStudents();
+  if(page==='analysis')runAnalysis();
+}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').classList.toggle('show');}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');}
+function attTab(t){
+  document.getElementById('tab-auto').classList.toggle('active',t==='auto');
+  document.getElementById('tab-manual').classList.toggle('active',t==='manual');
+  document.getElementById('att-auto').style.display=t==='auto'?'block':'none';
+  document.getElementById('att-manual').style.display=t==='manual'?'block':'none';
+}
+
+// ══════════════════════════════════════════
+//  CAMERA HELPER
+// ══════════════════════════════════════════
+async function startStream(vid,facing){
+  if(vid.srcObject){try{vid.srcObject.getTracks().forEach(t=>t.stop());}catch(e){}vid.srcObject=null;}
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1280},height:{ideal:720}}});}
+  catch(e){try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing}});}
+  catch(e2){stream=await navigator.mediaDevices.getUserMedia({video:true});}}
+  vid.srcObject=stream;vid.muted=true;
+  vid.setAttribute('playsinline','');vid.setAttribute('webkit-playsinline','');
+  await new Promise(res=>{
+    if(vid.readyState>=2){vid.play().catch(()=>{});res();return;}
+    let done=false;
+    const fin=()=>{if(done)return;done=true;vid.play().catch(()=>{});res();};
+    vid.onloadeddata=fin;vid.oncanplay=fin;
+    vid.onloadedmetadata=()=>setTimeout(fin,300);
+    setTimeout(fin,6000);
+  });
+  await new Promise(r=>setTimeout(r,500));
+  return stream;
+}
+
+// ══════════════════════════════════════════
+//  REGISTER CAMERA
+// ══════════════════════════════════════════
+async function startRegCam(){
+  if(!modelsLoaded){setSt('r','النماذج تُحمَّل...','y');return;}
+  setSt('r','جاري تشغيل الكاميرا...','y');
+  document.getElementById('btn-rs').disabled=true;
+  try{
+    regStream=await startStream(document.getElementById('reg-vid'),regFacing);
+    regReady=true;
+    setSt('r','الكاميرا تعمل ✓ — التقط 3 صور من زوايا مختلفة','g');
+    document.getElementById('btn-cap').disabled=false;
+    document.getElementById('btn-rstop').disabled=false;
+    document.getElementById('btn-rflip').style.display='inline-flex';
+  }catch(e){setSt('r','خطأ: '+(e.message||'تعذر الوصول للكاميرا'),'r');document.getElementById('btn-rs').disabled=false;}
+}
+function stopRegCam(){
+  if(regStream){regStream.getTracks().forEach(t=>t.stop());regStream=null;}
+  document.getElementById('reg-vid').srcObject=null;regReady=false;
+  document.getElementById('btn-cap').disabled=true;
+  document.getElementById('btn-rstop').disabled=true;
+  document.getElementById('btn-rs').disabled=false;
+  document.getElementById('btn-rflip').style.display='none';
+  setSt('r','تم الإيقاف','');
+}
+async function flipRegCam(){regFacing=regFacing==='user'?'environment':'user';stopRegCam();await startRegCam();}
+
+function capturePhoto(){
+  const vid=document.getElementById('reg-vid');
+  if(!regReady||!vid.srcObject||vid.readyState<2){setSt('r','الكاميرا غير جاهزة','r');return;}
+  const c=document.createElement('canvas');
+  const w=vid.videoWidth||640,h=vid.videoHeight||480;
+  c.width=w;c.height=h;
+  const ctx=c.getContext('2d');
+  if(regFacing==='user'){ctx.translate(w,0);ctx.scale(-1,1);}
+  ctx.drawImage(vid,0,0,w,h);
+  const url=c.toDataURL('image/jpeg',.85);
+  if(url==='data:,'){setSt('r','انتظر لحظة وأعد المحاولة','y');return;}
+  snaps.push(url);renderSnaps();
+  setSt('r',`✓ ${snaps.length} صورة${snaps.length<3?' — التقط المزيد':' ✓ جاهز للحفظ'}`,snaps.length>=3?'g':'y');
+  updateSaveBtn();
+}
+function renderSnaps(){
+  const c=document.getElementById('snaps');
+  if(!snaps.length){c.innerHTML='<span style="font-size:12px;color:var(--text3)">لا توجد صور بعد</span>';document.getElementById('snap-cnt').textContent='';return;}
+  c.innerHTML=snaps.map((p,i)=>`<img src="${p}" alt="صورة ${i+1}">`).join('');
+  document.getElementById('snap-cnt').textContent=snaps.length>=3?`✅ ${snaps.length} صور — ممتاز!`:`${snaps.length}/3 صور`;
+}
+function clearSnaps(){snaps=[];renderSnaps();updateSaveBtn();}
+function updateSaveBtn(){
+  const n=document.getElementById('inp-name').value.trim();
+  const g=document.getElementById('inp-grade').value;
+  const s=document.getElementById('inp-section').value;
+  document.getElementById('btn-save').disabled=!(n&&g&&s);
+}
+
+async function saveStudent(){
+  const name=document.getElementById('inp-name').value.trim();
+  const sid=document.getElementById('inp-sid').value.trim();
+  const grade=document.getElementById('inp-grade').value;
+  const section=document.getElementById('inp-section').value;
+  if(!name||!grade||!section){setSt('r','أكمل البيانات المطلوبة','r');return;}
+  setSt('r','جاري الحفظ...','y');
+  document.getElementById('btn-save').disabled=true;
+  const descriptors=[];
+  for(const snap of snaps){
+    try{
+      const img=await loadImg(snap);
+      const det=await faceapi.detectSingleFace(img,new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks(true).withFaceDescriptor();
+      if(det)descriptors.push(Array.from(det.descriptor));
+    }catch(e){}
+  }
+  const student={id:Date.now().toString(),name,sid,grade,section,photos:snaps.length?[snaps[0]]:[],descriptors,addedAt:new Date().toISOString()};
+  students.push(student);saveStorage();renderStudents();
+  setSt('r',`✅ تم حفظ "${name}"${descriptors.length?' — '+descriptors.length+' بصمة':''}` ,'g');
+  document.getElementById('inp-name').value='';document.getElementById('inp-sid').value='';
+  document.getElementById('inp-grade').value='';document.getElementById('inp-section').value='';
+  snaps=[];renderSnaps();document.getElementById('btn-save').disabled=true;
+  updateDashboard();showNotice(`✅ تم حفظ الطالب "${name}" بنجاح`);
+}
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
+
+// ══════════════════════════════════════════
+//  ATTENDANCE
+// ══════════════════════════════════════════
+function loadAttStudents(){
+  const grade=document.getElementById('att-grade').value;
+  const section=document.getElementById('att-section').value;
+  attGrade=grade;attSection=section;
+  if(!grade||!section){document.getElementById('att-list').innerHTML='<div class="empty"><span class="empty-icon">👆</span><p>اختر الصف والشعبة أولاً</p></div>';return;}
+  const cls=students.filter(s=>s.grade===grade&&s.section===section);
+  const date=document.getElementById('att-date').value;
+  const existing=sessions.find(s=>s.date===date&&s.grade===grade&&s.section===section);
+  attState={};
+  if(existing){cls.forEach(s=>{attState[s.id]=existing.records?.[s.id]||{status:'unknown'};});}
+  else{cls.forEach(s=>{attState[s.id]={status:'unknown'};});}
+  renderAttList();
+}
+
+function renderAttList(){
+  const grade=document.getElementById('att-grade').value;
+  const section=document.getElementById('att-section').value;
+  if(!grade||!section){document.getElementById('att-list').innerHTML='<div class="empty"><span class="empty-icon">👆</span><p>اختر الصف والشعبة أولاً</p></div>';return;}
+  const cls=students.filter(s=>s.grade===grade&&s.section===section);
+  if(!cls.length){document.getElementById('att-list').innerHTML=`<div class="empty"><span class="empty-icon">👥</span><p>لا يوجد طلاب — <a href="#" onclick="showPage('register')" style="color:var(--accent);font-weight:700">سجّل طلاباً</a></p></div>`;return;}
+  document.getElementById('att-list').innerHTML=cls.map((s,idx)=>{
+    const rec=attState[s.id]||{status:'unknown'};
+    const st=rec.status;
+    return`<div class="att-row ${st==='unknown'?'':st}" id="arow-${s.id}">
+      <div style="font-size:12px;font-weight:700;color:var(--text3);width:20px;text-align:center;flex-shrink:0">${idx+1}</div>
+      ${s.photos?.[0]?`<img class="att-avatar" src="${s.photos[0]}" alt="${s.name}">`:`<div class="att-avatar-ph">👤</div>`}
+      <div class="att-info">
+        <div class="att-name">${s.name}</div>
+        <div class="att-meta">${s.sid||''} ${rec.time?' · ⏱ '+rec.time:''}</div>
+      </div>
+      <div class="att-btns">
+        <button class="att-btn att-btn-p ${st==='present'?'on':''}" onclick="setAtt('${s.id}','present')" title="حاضر">✓</button>
+        <button class="att-btn att-btn-a ${st==='absent'?'on':''}" onclick="setAtt('${s.id}','absent')" title="غائب">✗</button>
+        <button class="att-btn att-btn-l ${st==='late'?'on':''}" onclick="setAtt('${s.id}','late')" title="متأخر">⏰</button>
+      </div>
+      <span class="badge ${st==='present'?'badge-present':st==='absent'?'badge-absent':st==='late'?'badge-late':'badge-unknown'}" id="abadge-${s.id}" style="min-width:52px;justify-content:center">
+        ${st==='present'?'حاضر':st==='absent'?'غائب':st==='late'?'متأخر':'—'}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+function setAtt(sid,status){
+  const now=new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
+  attState[sid]={status,time:now};
+  const row=document.getElementById('arow-'+sid);
+  if(row){
+    row.className='att-row '+(status==='unknown'?'':status);
+    row.querySelectorAll('.att-btn').forEach(b=>{
+      const isP=b.classList.contains('att-btn-p'),isA=b.classList.contains('att-btn-a'),isL=b.classList.contains('att-btn-l');
+      b.classList.toggle('on',(isP&&status==='present')||(isA&&status==='absent')||(isL&&status==='late'));
+    });
+    const badge=document.getElementById('abadge-'+sid);
+    if(badge){
+      badge.className='badge '+(status==='present'?'badge-present':status==='absent'?'badge-absent':status==='late'?'badge-late':'badge-unknown');
+      badge.textContent=status==='present'?'حاضر':status==='absent'?'غائب':status==='late'?'متأخر':'—';
+      const meta=row.querySelector('.att-meta');
+      if(meta&&status!=='unknown')meta.textContent=(students.find(s=>s.id===sid)?.sid||'')+' · ⏱ '+now;
+    }
+  }
+  updateDashStats();
+}
+
+function markAll(status){
+  const grade=document.getElementById('att-grade').value;
+  const section=document.getElementById('att-section').value;
+  if(!grade||!section){showNotice('⚠️ اختر الصف والشعبة أولاً',true);return;}
+  const now=new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
+  students.filter(s=>s.grade===grade&&s.section===section).forEach(s=>{attState[s.id]={status,time:now};});
+  renderAttList();updateDashStats();
+}
+
+function saveSession(){
+  const grade=document.getElementById('att-grade').value;
+  const section=document.getElementById('att-section').value;
+  const date=document.getElementById('att-date').value;
+  if(!grade||!section||!date){showNotice('⚠️ اختر الصف والشعبة والتاريخ',true);return;}
+  const idx=sessions.findIndex(s=>s.date===date&&s.grade===grade&&s.section===section);
+  const sess={id:idx>=0?sessions[idx].id:Date.now().toString(),date,grade,section,records:{...attState},savedAt:new Date().toISOString()};
+  if(idx>=0)sessions[idx]=sess;else sessions.push(sess);
+  saveStorage();updateDashboard();showNotice('✅ تم حفظ الكشف بنجاح');
+}
+
+// ══════════════════════════════════════════
+//  ATTENDANCE CAMERA
+// ══════════════════════════════════════════
+async function startAttCam(){
+  if(!modelsLoaded){setSt('att','النماذج تُحمَّل...','y');return;}
+  const grade=document.getElementById('att-grade').value;
+  const section=document.getElementById('att-section').value;
+  if(!grade||!section){setSt('att','اختر الصف والشعبة أولاً','r');return;}
+  setSt('att','جاري تشغيل الكاميرا...','y');
+  document.getElementById('btn-att-start').disabled=true;
+  try{
+    attStream=await startStream(document.getElementById('att-vid'),attFacing);
+    attReady=true;
+    document.getElementById('btn-att-stop').disabled=false;
+    document.getElementById('btn-att-flip').style.display='inline-flex';
+    setSt('att','الكاميرا تعمل ✓ — التعرف التلقائي جارٍ...','g');
+    if(detLoop)clearInterval(detLoop);
+    detLoop=setInterval(()=>{if(attReady&&document.getElementById('auto-check').checked)detectAndMark();},1500);
+  }catch(e){
+    setSt('att','خطأ: '+(e.message||'تعذر الوصول للكاميرا'),'r');
+    document.getElementById('btn-att-start').disabled=false;
+  }
+}
+function stopAttCam(){
+  attReady=false;
+  if(detLoop){clearInterval(detLoop);detLoop=null;}
+  if(attStream){attStream.getTracks().forEach(t=>t.stop());attStream=null;}
+  document.getElementById('att-vid').srcObject=null;
+  clearCanvas('att-ov');
+  document.getElementById('btn-att-start').disabled=false;
+  document.getElementById('btn-att-stop').disabled=true;
+  document.getElementById('btn-att-flip').style.display='none';
+  setSt('att','تم الإيقاف','');
+}
+async function flipCam(){
+  attFacing=attFacing==='user'?'environment':'user';
+  if(attStream){attStream.getTracks().forEach(t=>t.stop());attStream=null;}
+  attReady=false;
+  try{attStream=await startStream(document.getElementById('att-vid'),attFacing);attReady=true;setSt('att','✓','g');}
+  catch(e){setSt('att','خطأ في التبديل','r');}
+}
+
+async function detectAndMark(){
+  const vid=document.getElementById('att-vid');
+  if(!vid.srcObject||vid.readyState<2)return;
+  const canvas=document.getElementById('att-ov');
+  const dw=vid.clientWidth||320,dh=vid.clientHeight||240;
+  canvas.width=dw;canvas.height=dh;
+  try{
+    const grade=document.getElementById('att-grade').value;
+    const section=document.getElementById('att-section').value;
+    const cls=students.filter(s=>s.grade===grade&&s.section===section&&s.descriptors?.length);
+    if(!cls.length)return;
+    const dets=await faceapi.detectAllFaces(vid,new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.4})).withFaceLandmarks(true).withFaceDescriptors();
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,dw,dh);
+    if(!dets.length)return;
+    const labeled=cls.map(s=>new faceapi.LabeledFaceDescriptors(s.id,s.descriptors.map(d=>new Float32Array(d))));
+    const matcher=new faceapi.FaceMatcher(labeled,0.5);
+    const sx=dw/vid.videoWidth,sy=dh/vid.videoHeight;
+    let marked=0;
+    dets.forEach(det=>{
+      const box=det.detection.box;
+      const x=box.x*sx,y=box.y*sy,bw=box.width*sx,bh=box.height*sy;
+      const match=matcher.findBestMatch(det.descriptor);
+      const isKnown=match.label!=='unknown';
+      const color=isKnown?'#16a34a':'#dc2626';
+      if(isKnown&&(!attState[match.label]||attState[match.label].status==='unknown')){
+        const now=new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
+        attState[match.label]={status:'present',time:now};
+        const row=document.getElementById('arow-'+match.label);
+        if(row){
+          row.className='att-row present';
+          row.querySelectorAll('.att-btn').forEach(b=>b.classList.remove('on'));
+          row.querySelector('.att-btn-p')?.classList.add('on');
+          const badge=document.getElementById('abadge-'+match.label);
+          if(badge){badge.className='badge badge-present';badge.textContent='حاضر';}
+        }
+        marked++;
+      }
+      ctx.strokeStyle=color;ctx.lineWidth=3;
+      ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,bw,bh,6);else ctx.rect(x,y,bw,bh);ctx.stroke();
+      const lh=26;ctx.fillStyle=color+'ee';
+      ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y-lh-3,bw,lh,5);else ctx.rect(x,y-lh-3,bw,lh);ctx.fill();
+      ctx.fillStyle='#fff';ctx.font=`bold ${Math.max(10,Math.min(13,bw/8))}px Tajawal,Arial`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      const name=isKnown?(students.find(s=>s.id===match.label)?.name||'?'):'غير معروف';
+      ctx.fillText(name,x+bw/2,y-lh/2-2);
+    });
+    if(marked>0)updateDashStats();
+    setSt('att',`✓ ${dets.length} وجه${marked?' — تم تسجيل '+marked+' حاضر':''}  |  ${new Date().toLocaleTimeString('ar-SA')}` ,'g');
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════
+function updateDashboard(){
+  let present=0,absent=0,late=0;
+  const todaySess=sessions.filter(s=>s.date===todayStr);
+  const counted=new Set();
+  todaySess.forEach(s=>Object.entries(s.records||{}).forEach(([sid,rec])=>{
+    if(!counted.has(sid)){counted.add(sid);
+      if(rec.status==='present')present++;
+      else if(rec.status==='absent')absent++;
+      else if(rec.status==='late')late++;
+    }
+  }));
+  document.getElementById('ds-students').textContent=students.length;
+  document.getElementById('ds-present').textContent=present;
+  document.getElementById('ds-absent').textContent=absent;
+  document.getElementById('ds-late').textContent=late;
+  const total=present+absent+late;
+  const pct=total?Math.round((present+late)/total*100):0;
+  document.getElementById('ds-pct').textContent=total?pct+'%':'—';
+  document.getElementById('ds-bar').style.width=pct+'%';
+  const recent=sessions.slice(-6).reverse();
+  const c=document.getElementById('dash-sessions');
+  if(!recent.length){c.innerHTML='<div class="empty"><span class="empty-icon">📭</span><p>لا توجد جلسات بعد</p></div>';return;}
+  c.innerHTML=`<div class="tbl-wrap"><table>
+    <thead><tr><th>التاريخ</th><th>الصف</th><th>الشعبة</th><th>✅ حاضر</th><th>❌ غائب</th><th>⏰ متأخر</th></tr></thead>
+    <tbody>${recent.map(s=>{
+      const p=Object.values(s.records||{}).filter(r=>r.status==='present').length;
+      const a=Object.values(s.records||{}).filter(r=>r.status==='absent').length;
+      const l=Object.values(s.records||{}).filter(r=>r.status==='late').length;
+      return`<tr><td style="font-weight:600">${s.date}</td><td>${s.grade}</td><td>${s.section}</td>
+        <td><span style="color:var(--green);font-weight:700">${p}</span></td>
+        <td><span style="color:var(--red);font-weight:700">${a}</span></td>
+        <td><span style="color:var(--yellow);font-weight:700">${l}</span></td></tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+function updateDashStats(){
+  document.getElementById('ds-present').textContent=Object.values(attState).filter(r=>r.status==='present').length;
+  document.getElementById('ds-absent').textContent=Object.values(attState).filter(r=>r.status==='absent').length;
+  document.getElementById('ds-late').textContent=Object.values(attState).filter(r=>r.status==='late').length;
+}
+function updateDashSection(){
+  document.getElementById('att-grade').value=document.getElementById('dash-grade').value||'';
+  document.getElementById('att-section').value=document.getElementById('dash-section').value||'';
+}
+function goToAttendance(){
+  document.getElementById('att-grade').value=document.getElementById('dash-grade').value||'';
+  document.getElementById('att-section').value=document.getElementById('dash-section').value||'';
+  document.getElementById('att-date').value=document.getElementById('dash-date').value||todayStr;
+  showPage('attendance');
+  if(document.getElementById('att-grade').value&&document.getElementById('att-section').value)loadAttStudents();
+}
+
+function runSearch(){
+  const from=document.getElementById('mng-from').value;
+  const to=document.getElementById('mng-to').value;
+  const grade=document.getElementById('mng-grade').value;
+  const section=document.getElementById('mng-section').value;
+  const name=document.getElementById('mng-name').value.trim().toLowerCase();
+  const filtered=sessions.filter(s=>{
+    if(from&&s.date<from)return false;
+    if(to&&s.date>to)return false;
+    if(grade&&s.grade!==grade)return false;
+    if(section&&s.section!==section)return false;
+    return true;
+  });
+  const rows=[];
+  filtered.forEach(sess=>Object.entries(sess.records||{}).forEach(([sid,rec])=>{
+    const st=students.find(s=>s.id===sid);
+    if(!st)return;
+    if(name&&!st.name.toLowerCase().includes(name))return;
+    if(rec.status==='absent'||rec.status==='late')rows.push({sess,st,rec,sid});
+  }));
+  if(!rows.length){document.getElementById('mng-results').innerHTML='<div class="empty"><span class="empty-icon">✅</span><p>لا توجد نتائج غياب</p></div>';return;}
+  document.getElementById('mng-results').innerHTML=`
+    <div style="font-size:13px;color:var(--text3);margin-bottom:8px;font-weight:600">تم العثور على ${rows.length} سجل</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>الاسم</th><th>الرقم</th><th>الصف</th><th>الشعبة</th><th>التاريخ</th><th>الحالة</th><th>الوقت</th><th></th></tr></thead>
+      <tbody>${rows.map((r,i)=>`<tr id="mrow-${i}">
+        <td style="font-weight:700">${r.st.name}</td>
+        <td style="color:var(--text3)">${r.st.sid||'—'}</td>
+        <td>${r.st.grade}</td><td>${r.st.section}</td>
+        <td style="font-weight:600">${r.sess.date}</td>
+        <td><span class="badge ${r.rec.status==='absent'?'badge-absent':'badge-late'}">${r.rec.status==='absent'?'غائب':'متأخر'}</span></td>
+        <td style="color:var(--text3)">${r.rec.time||'—'}</td>
+        <td><button class="btn btn-danger" style="padding:5px 10px;font-size:11px" onclick="deleteRecord('${r.sess.id}','${r.sid}',${i})">🗑</button></td>
+      </tr>`).join('')}</tbody></table></div>`;
+}
+function deleteRecord(sessId,sid,rowIdx){
+  if(!confirm('حذف هذا السجل؟'))return;
+  const sess=sessions.find(s=>s.id===sessId);
+  if(sess?.records?.[sid])delete sess.records[sid];
+  saveStorage();
+  const row=document.getElementById('mrow-'+rowIdx);
+  if(row){row.style.transition='opacity .3s';row.style.opacity='0';setTimeout(()=>row.remove(),300);}
+}
+function clearSearch(){
+  ['mng-from','mng-to','mng-name'].forEach(id=>document.getElementById(id).value='');
+  ['mng-grade','mng-section'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('mng-results').innerHTML='<div class="empty"><span class="empty-icon">🔍</span><p>اضغط بحث لعرض النتائج</p></div>';
+}
+
+function runAnalysis(){
+  const grade=document.getElementById('ana-grade').value;
+  const section=document.getElementById('ana-section').value;
+  if(!grade){document.getElementById('ana-results').innerHTML='<div class="empty"><span class="empty-icon">📊</span><p>اختر الصف أولاً</p></div>';return;}
+  const cls=students.filter(s=>s.grade===grade&&(!section||s.section===section));
+  if(!cls.length){document.getElementById('ana-results').innerHTML='<div class="empty"><span class="empty-icon">👥</span><p>لا يوجد طلاب</p></div>';return;}
+  const totalSess=Math.max(1,sessions.filter(s=>s.grade===grade&&(!section||s.section===section)).length);
+  const data=cls.map(st=>{
+    const classSess=sessions.filter(s=>s.grade===grade&&(!section||s.section===section));
+    const absent=classSess.filter(s=>s.records?.[st.id]?.status==='absent').length;
+    const late=classSess.filter(s=>s.records?.[st.id]?.status==='late').length;
+    const present=classSess.filter(s=>s.records?.[st.id]?.status==='present').length;
+    const pct=Math.round(present/totalSess*100);
+    let tag='good',tagText='منتظم';
+    if(pct<50){tag='danger';tagText='منقطع';}
+    else if(pct<80){tag='warn';tagText='كثير الغياب';}
+    return{...st,absent,late,present,pct,tag,tagText};
+  }).sort((a,b)=>a.pct-b.pct);
+  document.getElementById('ana-good').textContent=data.filter(d=>d.tag==='good').length;
+  document.getElementById('ana-warn').textContent=data.filter(d=>d.tag==='warn').length;
+  document.getElementById('ana-danger').textContent=data.filter(d=>d.tag==='danger').length;
+  document.getElementById('ana-total').textContent=cls.length;
+  document.getElementById('ana-results').innerHTML=`
+    <div style="font-size:12px;color:var(--text3);margin-bottom:10px;font-weight:600">📅 بناءً على ${totalSess} جلسة</div>
+    <div class="ana-list">${data.map(d=>`
+      <div class="ana-row ${d.tag}">
+        ${d.photos?.[0]?`<img class="ana-avatar" src="${d.photos[0]}" alt="${d.name}">`:`<div class="ana-ph">👤</div>`}
+        <div class="ana-info">
+          <div class="ana-name">${d.name}${d.sid?` <span style="font-size:11px;color:var(--text3);font-weight:400">${d.sid}</span>`:''}</div>
+          <div class="ana-stats">✅ ${d.present} &nbsp;❌ ${d.absent} &nbsp;⏰ ${d.late}</div>
+          <div class="ana-bar-wrap"><div class="prog-wrap"><div class="prog-fill" style="width:${d.pct}%;background:${d.tag==='good'?'var(--green)':d.tag==='warn'?'var(--yellow)':'var(--red)'}"></div></div></div>
+          <div class="ana-tag ${d.tag}">${d.tagText}</div>
+        </div>
+        <div class="ana-pct">${d.pct}%</div>
+      </div>`).join('')}
+    </div>`;
+}
+
+function renderStudents(){
+  const grade=document.getElementById('std-grade').value;
+  const section=document.getElementById('std-section').value;
+  const filtered=students.filter(s=>(!grade||s.grade===grade)&&(!section||s.section===section));
+  const g=document.getElementById('students-grid');
+  if(!filtered.length){g.innerHTML='<div class="empty" style="grid-column:1/-1"><span class="empty-icon">👥</span><p>لا يوجد طلاب بعد</p></div>';return;}
+  g.innerHTML=filtered.map(s=>`
+    <div class="std-card">
+      <button class="std-del" onclick="delStudent('${s.id}')">×</button>
+      ${s.photos?.[0]?`<img src="${s.photos[0]}" alt="${s.name}">`:`<div class="ph">👤</div>`}
+      <div class="nm">${s.name}</div>
+      ${s.sid?`<div class="mt">${s.sid}</div>`:''}
+      <div class="mt">${s.grade} - شعبة ${s.section}</div>
+      <div class="mt" style="color:${s.descriptors?.length?'var(--green)':'var(--yellow)'}">
+        ${s.descriptors?.length?'✅ بصمة وجه':'⚠️ بدون صورة'}
+      </div>
+    </div>`).join('');
+}
+function delStudent(id){
+  if(!confirm('حذف هذا الطالب؟'))return;
+  students=students.filter(s=>s.id!==id);
+  saveStorage();renderStudents();updateDashboard();
+}
+function clearAllStudents(){
+  if(!students.length)return;
+  if(!confirm('حذف جميع الطلاب؟'))return;
+  students=[];saveStorage();renderStudents();updateDashboard();
+}
+function importStudents(){
+  const raw=prompt('الصق أسماء الطلاب — كل اسم في سطر:','');
+  if(!raw)return;
+  const grade=prompt('الصف:','الخامس');
+  const section=prompt('الشعبة (1-4):','1');
+  if(!grade||!section)return;
+  const names=raw.split('\n').map(n=>n.trim()).filter(n=>n.length>1);
+  let added=0;
+  names.forEach(name=>{
+    if(!students.find(s=>s.name===name&&s.grade===grade&&s.section===section)){
+      students.push({id:Date.now().toString()+'_'+Math.random().toString(36).slice(2,6),name,sid:'',grade,section,photos:[],descriptors:[],addedAt:new Date().toISOString()});
+      added++;
+    }
+  });
+  saveStorage();renderStudents();updateDashboard();
+  showNotice(`✅ تم استيراد ${added} طالب — ${grade} شعبة ${section}`);
+}
+
+function exportCSV(){
+  if(!sessions.length||!students.length){showNotice('⚠️ لا توجد بيانات للتصدير',true);return;}
+  const header='الاسم,الرقم,الصف,الشعبة,التاريخ,الحالة,الوقت\n';
+  const rows=[];
+  sessions.forEach(s=>Object.entries(s.records||{}).forEach(([sid,rec])=>{
+    const st=students.find(x=>x.id===sid);
+    if(!st)return;
+    rows.push(`${st.name},${st.sid||''},${st.grade},${st.section},${s.date},${rec.status==='present'?'حاضر':rec.status==='absent'?'غائب':'متأخر'},${rec.time||''}`);
+  }));
+  const blob=new Blob(['\uFEFF'+header+rows.join('\n')],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`حضور_${todayStr}.csv`;a.click();URL.revokeObjectURL(url);
+}
+
+function saveStorage(){
+  try{localStorage.setItem('sch_v4_students',JSON.stringify(students));}catch(e){}
+  try{localStorage.setItem('sch_v4_sessions',JSON.stringify(sessions));}catch(e){}
+}
+function loadStorage(){
+  try{const d=localStorage.getItem('sch_v4_students');if(d)students=JSON.parse(d);}catch(e){}
+  try{const d=localStorage.getItem('sch_v4_sessions');if(d)sessions=JSON.parse(d);}catch(e){}
+}
+
+function setSt(m,msg,dot){
+  const map={r:['rs','rd'],att:['att-st','att-dot']};
+  const[sid,did]=map[m]||[];
+  if(sid)document.getElementById(sid).textContent=msg;
+  if(did){const d=document.getElementById(did);d.className='dot'+(dot?' '+dot:'');}
+}
+function clearCanvas(id){const c=document.getElementById(id);if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);}
+function showNotice(msg,warn=false){
+  const n=document.createElement('div');
+  const color=warn?'#d97706':'#16a34a';
+  const bg=warn?'#fffbeb':'#f0fdf4';
+  n.style.cssText=`position:fixed;top:72px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:999;background:${bg};color:${color};padding:11px 20px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 8px 32px rgba(0,0,0,.12);border:1px solid ${warn?'#fde68a':'#bbf7d0'};transition:all .3s;font-family:Tajawal,sans-serif;white-space:nowrap`;
+  n.textContent=msg;document.body.appendChild(n);
+  requestAnimationFrame(()=>n.style.transform='translateX(-50%) translateY(0)');
+  setTimeout(()=>{n.style.opacity='0';n.style.transform='translateX(-50%) translateY(-8px)';setTimeout(()=>n.remove(),300);},2500);
+}
+</script>
+</body>
+</html>
